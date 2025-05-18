@@ -22,22 +22,26 @@ class Game:
         self.board_renderer = BoardRenderer(self.screen)
         self.game_state = GameState()
         
+        # Player type (human or AI)
+        self.player_type = "human"  # Default to human player
+        
         # Initialize board rectangles
         self.player_board_rect = pygame.Rect(
             GRID_OFFSET_X,
-            GRID_OFFSET_Y + 100,  # Moved down to make room for buttons
+            GRID_OFFSET_Y + 100,
             10 * CELL_SIZE,
             10 * CELL_SIZE
         )
         self.ai_board_rect = pygame.Rect(
             GRID_OFFSET_X + 10 * CELL_SIZE + GRID_SPACING,
-            GRID_OFFSET_Y + 100,  # Moved down to make room for buttons
+            GRID_OFFSET_Y + 100,
             10 * CELL_SIZE,
             10 * CELL_SIZE
         )
         
         # Initialize AI
         self.ai = AIPlayer(difficulty=ai_difficulty)
+        self.player_ai = None  # Will be initialized if player type is AI
         
         # Initialize fonts
         self.font = pygame.font.Font(None, 36)
@@ -55,7 +59,7 @@ class Game:
         # Restart button
         self.restart_button = pygame.Rect(
             WINDOW_WIDTH // 2 - 100,
-            WINDOW_HEIGHT - 80,  # Moved down from WINDOW_HEIGHT - 60 to WINDOW_HEIGHT - 80
+            WINDOW_HEIGHT - 80,
             200,
             40
         )
@@ -63,7 +67,7 @@ class Game:
         # Random placement button
         self.random_placement_button = pygame.Rect(
             WINDOW_WIDTH // 2 - 100,
-            100,  # Moved up from WINDOW_HEIGHT - 120 to 100
+            100,
             200,
             40
         )
@@ -76,19 +80,33 @@ class Game:
         
         self.easy_button = pygame.Rect(
             start_x,
-            50,  # Below status text
+            50,
             button_width,
             40
         )
         self.medium_button = pygame.Rect(
             start_x + button_width + button_spacing,
-            50,  # Below status text
+            50,
             button_width,
             40
         )
         self.hard_button = pygame.Rect(
             start_x + (button_width + button_spacing) * 2,
-            50,  # Below status text
+            50,
+            button_width,
+            40
+        )
+
+        # Player type buttons
+        self.human_button = pygame.Rect(
+            start_x - button_width - button_spacing,
+            50,
+            button_width,
+            40
+        )
+        self.ai_player_button = pygame.Rect(
+            start_x + total_width + button_spacing,
+            50,
             button_width,
             40
         )
@@ -126,6 +144,16 @@ class Game:
         self.restart_game()
         self.show_notification(f"Difficulty changed to {difficulty.capitalize()}!")
 
+    def change_player_type(self, player_type):
+        """Change player type and restart the game"""
+        self.player_type = player_type
+        if player_type == "ai":
+            self.player_ai = AIPlayer(difficulty=self.ai.difficulty)
+        else:
+            self.player_ai = None
+        self.restart_game()
+        self.show_notification(f"Player type changed to {player_type.capitalize()}!")
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -149,9 +177,14 @@ class Game:
                         self.change_difficulty("medium")
                     elif self.hard_button.collidepoint(event.pos):
                         self.change_difficulty("hard")
-                    elif not self.game_state.is_ai_turn():  # Only handle clicks during player's turn
+                    # Check player type buttons
+                    elif self.human_button.collidepoint(event.pos):
+                        self.change_player_type("human")
+                    elif self.ai_player_button.collidepoint(event.pos):
+                        self.change_player_type("ai")
+                    elif not self.game_state.is_ai_turn() and self.player_type == "human":  # Only handle clicks during player's turn if human
                         self.handle_click(event.pos)
-                elif event.button == 3 and not self.game_state.is_ai_turn():  # Right click
+                elif event.button == 3 and not self.game_state.is_ai_turn() and self.player_type == "human":  # Right click
                     self.handle_right_click(event.pos)
 
     def handle_click(self, pos):
@@ -209,8 +242,8 @@ class Game:
 
     def handle_playing_click(self, pos):
         """Handle clicks during the playing phase"""
-        if not self.game_state.is_player_turn:
-            return  # Ignore clicks during AI's turn
+        if not self.game_state.is_player_turn or self.player_type == "ai":
+            return  # Ignore clicks during AI's turn or if player is AI
             
         # Check if click is on AI's board
         if self.ai_board_rect.collidepoint(pos):
@@ -303,8 +336,8 @@ class Game:
         
         # Draw turn indicator below the grids only during playing phase
         if self.game_state.is_playing_phase():
-            turn_color = (0, 255, 0) if self.game_state.is_player_turn else (255, 0, 0)  # Green for player, Red for AI
-            turn_text = "Your turn - Click on enemy board to shoot" if self.game_state.is_player_turn else "AI's turn..."
+            turn_color = (0, 255, 0) if self.game_state.is_player_turn else (255, 0, 0)
+            turn_text = "Your turn - Click on enemy board to shoot" if self.game_state.is_player_turn and self.player_type == "human" else "AI's turn..."
             turn_surface = self.font.render(turn_text, True, turn_color)
             turn_rect = turn_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
@@ -356,6 +389,21 @@ class Game:
         hard_text = self.font.render("Hard", True, (0, 0, 0))
         hard_rect = hard_text.get_rect(center=self.hard_button.center)
         self.screen.blit(hard_text, hard_rect)
+
+        # Draw player type buttons
+        # Human button
+        human_color = (100, 100, 255) if self.player_type == "human" else (200, 200, 200)
+        pygame.draw.rect(self.screen, human_color, self.human_button)
+        human_text = self.font.render("Human", True, (0, 0, 0))
+        human_rect = human_text.get_rect(center=self.human_button.center)
+        self.screen.blit(human_text, human_rect)
+
+        # AI Player button
+        ai_player_color = (255, 100, 255) if self.player_type == "ai" else (200, 200, 200)
+        pygame.draw.rect(self.screen, ai_player_color, self.ai_player_button)
+        ai_player_text = self.font.render("AI", True, (0, 0, 0))
+        ai_player_rect = ai_player_text.get_rect(center=self.ai_player_button.center)
+        self.screen.blit(ai_player_text, ai_player_rect)
         
         pygame.display.flip()
 
@@ -394,6 +442,28 @@ class Game:
     def run(self):
         while self.running:
             self.handle_events()
+            
+            # Handle AI vs AI mode
+            if self.player_type == "ai" and self.game_state.is_playing_phase() and not self.game_state.is_game_over():
+                if self.game_state.is_player_turn:
+                    # Player AI's turn
+                    x, y = self.player_ai.get_next_shot(self.ai_board)
+                    hit, message = self.ai_board.receive_shot(x, y)
+                    self.player_ai.record_shot(x, y, hit)
+                    
+                    if hit:
+                        self.show_notification(f"Player AI hits at {chr(65 + x)}{y + 1}! {message}")
+                        if self.ai_board.is_all_ships_destroyed():
+                            self.game_state.set_game_over()
+                            self.show_notification("Game Over! Player AI wins!")
+                    else:
+                        self.show_notification(f"Player AI misses at {chr(65 + x)}{y + 1}")
+                        pygame.time.wait(1000)
+                        self.game_state.switch_turn()
+                else:
+                    # Enemy AI's turn
+                    self.handle_ai_turn()
+            
             self.draw()
             self.clock.tick(60)
 
