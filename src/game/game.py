@@ -6,6 +6,7 @@ from utils.constants import (
 from models.board import Board
 from models.ship import Ship
 from models.ai_player import AIPlayer
+from models.game_logger import GameLogger
 from ui.board_renderer import BoardRenderer
 from game.game_state import GameState
 
@@ -21,6 +22,7 @@ class Game:
         self.ai_board = Board()
         self.board_renderer = BoardRenderer(self.screen)
         self.game_state = GameState()
+        self.game_logger = GameLogger()  # Initialize game logger
         
         # Player type (human or AI)
         self.player_type = "human"  # Default to human player
@@ -137,6 +139,9 @@ class Game:
         self.show_notification("Ships placed randomly! Enemy fleet is ready!")
         # Place AI ships
         self.ai.place_ships(self.ai_board)
+        # Log initial board states
+        self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
+        self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
 
     def change_difficulty(self, difficulty):
         """Change AI difficulty and restart the game"""
@@ -149,8 +154,16 @@ class Game:
         self.player_type = player_type
         if player_type == "ai":
             self.player_ai = AIPlayer(difficulty=self.ai.difficulty)
+            # Place ships for both AIs
+            self.player_ai.place_ships(self.player_board)
+            self.ai.place_ships(self.ai_board)
+            # Log initial board states
+            self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
+            self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
+            self.game_logger.set_player_type("ai")
         else:
             self.player_ai = None
+            self.game_logger.set_player_type("human")
         self.restart_game()
         self.show_notification(f"Player type changed to {player_type.capitalize()}!")
 
@@ -254,11 +267,15 @@ class Game:
             if 0 <= grid_x < 10 and 0 <= grid_y < 10:
                 hit, message = self.ai_board.receive_shot(grid_x, grid_y)
                 
+                # Log the move
+                self.game_logger.log_move(grid_x, grid_y, hit)
+                
                 if hit:
                     self.show_notification(f"Hit! {message}")
                     if self.ai_board.is_all_ships_destroyed():
                         self.game_state.set_game_over()
                         self.show_notification("Game Over! You win!")
+                        self.game_logger.log_game_end("player")
                 else:
                     self.show_notification("Miss!")
                     pygame.time.wait(1000)  # Wait to show miss
@@ -281,12 +298,16 @@ class Game:
         # Record the result for AI's strategy
         self.ai.record_shot(x, y, hit)
         
+        # Log the move
+        self.game_logger.log_move(x, y, hit)
+        
         # Show AI's shot result
         if hit:
             self.show_notification(f"AI hits at {chr(65 + x)}{y + 1}! {message}")
             if self.player_board.is_all_ships_destroyed():
                 self.game_state.set_game_over()
                 self.show_notification("Game Over! AI wins!")
+                self.game_logger.log_game_end("ai")
             else:
                 # AI gets another turn after a hit
                 pygame.time.wait(1500)  # Wait to show hit
@@ -451,11 +472,15 @@ class Game:
                     hit, message = self.ai_board.receive_shot(x, y)
                     self.player_ai.record_shot(x, y, hit)
                     
+                    # Log the move
+                    self.game_logger.log_move(x, y, hit)
+                    
                     if hit:
                         self.show_notification(f"Player AI hits at {chr(65 + x)}{y + 1}! {message}")
                         if self.ai_board.is_all_ships_destroyed():
                             self.game_state.set_game_over()
                             self.show_notification("Game Over! Player AI wins!")
+                            self.game_logger.log_game_end("player_ai")
                     else:
                         self.show_notification(f"Player AI misses at {chr(65 + x)}{y + 1}")
                         pygame.time.wait(1000)
