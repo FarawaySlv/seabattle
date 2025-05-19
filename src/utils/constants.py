@@ -15,7 +15,7 @@ ORANGE = (255, 165, 0)  # For partially hit ships
 GRID_SIZE = 10
 CELL_SIZE = 40
 GRID_OFFSET_X = 100
-GRID_OFFSET_Y = 100
+GRID_OFFSET_Y = 20
 GRID_SPACING = 100
 RIGHT_MARGIN = 60  # New margin after second grid
 

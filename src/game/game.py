@@ -30,99 +30,124 @@ class Game:
         self.player_ai_type = "algorithmic"  # Default to algorithmic AI
         self.enemy_ai_type = ai_type  # Type of AI opponent
         
-        # Initialize board rectangles
-        self.player_board_rect = pygame.Rect(
-            GRID_OFFSET_X,
-            GRID_OFFSET_Y + 100,
-            10 * CELL_SIZE,
-            10 * CELL_SIZE
-        )
-        self.ai_board_rect = pygame.Rect(
-            GRID_OFFSET_X + 10 * CELL_SIZE + GRID_SPACING,
-            GRID_OFFSET_Y + 100,
-            10 * CELL_SIZE,
-            10 * CELL_SIZE
-        )
-        
-        # Initialize AI
-        self.ai = self._create_ai(ai_type)
-        self.player_ai = None  # Will be initialized if player type is AI
+        # Speed control
+        self.speed_multiplier = 1  # Default speed
+        self.speed_button_radius = 15
+        self.speed_button_spacing = 10
+        self.speed_button_x = WINDOW_WIDTH - 50  # Position from right edge
+        self.speed_button_y = 50  # Start position from top
         
         # Initialize fonts
-        self.font = pygame.font.Font(None, 36)
-        self.small_font = pygame.font.Font(None, 24)
+        self.font = pygame.font.Font(None, 32)
+        self.small_font = pygame.font.Font(None, 20)
         
         # Notification system
         self.notification = ""
         self.notification_timer = 0
-        self.notification_duration = 120  # frames (2 seconds at 60 FPS)
+        self.notification_duration = 120
         
         # Ship placement
         self.selected_ship = None
         self.ship_orientation = True
 
-        # Restart button
-        self.restart_button = pygame.Rect(
-            WINDOW_WIDTH // 2 - 100,
-            WINDOW_HEIGHT - 80,
-            200,
-            40
+        # Panel settings
+        panel_height = 60
+        button_height = 35
+        button_width = 110
+        button_spacing = 8
+        panel_padding = 15
+
+        # Initialize board rectangles first
+        self.player_board_rect = pygame.Rect(
+            GRID_OFFSET_X,
+            GRID_OFFSET_Y + 20 + panel_height + 10,  # Reduced top margin
+            10 * CELL_SIZE,
+            10 * CELL_SIZE
+        )
+        self.ai_board_rect = pygame.Rect(
+            GRID_OFFSET_X + 10 * CELL_SIZE + GRID_SPACING,
+            GRID_OFFSET_Y + 20 + panel_height + 10,  # Reduced top margin
+            10 * CELL_SIZE,
+            10 * CELL_SIZE
+        )
+
+        # Player side panel (left)
+        self.player_panel_rect = pygame.Rect(
+            self.player_board_rect.x,
+            GRID_OFFSET_Y + 20,  # Reduced top margin
+            self.player_board_rect.width,
+            panel_height
+        )
+
+        # Player side buttons
+        total_buttons_width = (button_width * 3) + (button_spacing * 2)
+        start_x = self.player_panel_rect.x + (self.player_panel_rect.width - total_buttons_width) // 2
+        button_y = self.player_panel_rect.y + (panel_height - button_height) // 2
+
+        self.player_human_button = pygame.Rect(
+            start_x,
+            button_y,
+            button_width,
+            button_height
+        )
+        self.player_algo_button = pygame.Rect(
+            start_x + button_width + button_spacing,
+            button_y,
+            button_width,
+            button_height
+        )
+        self.player_trans_button = pygame.Rect(
+            start_x + (button_width + button_spacing) * 2,
+            button_y,
+            button_width,
+            button_height
+        )
+
+        # Enemy side panel (right)
+        self.enemy_panel_rect = pygame.Rect(
+            self.ai_board_rect.x,
+            GRID_OFFSET_Y + 20,  # Reduced top margin
+            self.ai_board_rect.width,
+            panel_height
+        )
+
+        # Enemy side buttons
+        total_buttons_width = (button_width * 2) + button_spacing
+        start_x = self.enemy_panel_rect.x + (self.enemy_panel_rect.width - total_buttons_width) // 2
+        button_y = self.enemy_panel_rect.y + (panel_height - button_height) // 2
+
+        self.enemy_algo_button = pygame.Rect(
+            start_x,
+            button_y,
+            button_width,
+            button_height
+        )
+        self.enemy_trans_button = pygame.Rect(
+            start_x + button_width + button_spacing,
+            button_y,
+            button_width,
+            button_height
         )
 
         # Random placement button
         self.random_placement_button = pygame.Rect(
             WINDOW_WIDTH // 2 - 100,
-            100,
+            self.player_board_rect.bottom + 10,  # Position below the grids
             200,
-            40
+            35  # Reduced height
         )
 
-        # Player type buttons
-        button_width = 100
-        button_spacing = 20
-        total_width = button_width * 2 + button_spacing
-        start_x = (WINDOW_WIDTH - total_width) // 2
-        
-        self.human_button = pygame.Rect(
-            start_x,
-            50,
-            button_width,
-            40
-        )
-        self.ai_player_button = pygame.Rect(
-            start_x + button_width + button_spacing,
-            50,
-            button_width,
-            40
+        # Restart button
+        self.restart_button = pygame.Rect(
+            WINDOW_WIDTH // 2 - 100,
+            WINDOW_HEIGHT - 50,  # Moved up from 80
+            200,
+            35  # Reduced height
         )
 
-        # AI type buttons
-        self.algorithmic_button = pygame.Rect(
-            start_x - button_width - button_spacing,
-            100,
-            button_width,
-            40
-        )
-        self.transformer_button = pygame.Rect(
-            start_x + total_width + button_spacing,
-            100,
-            button_width,
-            40
-        )
-
-        # Player AI type buttons (only shown when player type is AI)
-        self.player_algo_button = pygame.Rect(
-            start_x - button_width - button_spacing,
-            150,
-            button_width,
-            40
-        )
-        self.player_trans_button = pygame.Rect(
-            start_x + total_width + button_spacing,
-            150,
-            button_width,
-            40
-        )
+        # Initialize AI
+        self.ai = self._create_ai(ai_type)
+        self.player_ai = None  # Will be initialized if player type is AI
 
     def _create_ai(self, ai_type: str):
         """Create an AI player of the specified type"""
@@ -214,28 +239,35 @@ class Game:
                     self.show_notification("Ship orientation changed!")
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left click
+                    # Check speed buttons
+                    for i in range(3):
+                        button_center = (self.speed_button_x, self.speed_button_y + i * (self.speed_button_radius * 2 + self.speed_button_spacing))
+                        if ((event.pos[0] - button_center[0]) ** 2 + (event.pos[1] - button_center[1]) ** 2) <= self.speed_button_radius ** 2:
+                            self.speed_multiplier = i + 1
+                            self.show_notification(f"Game speed set to {self.speed_multiplier}x")
+                            break
+                    
                     if self.game_state.is_game_over() and self.restart_button.collidepoint(event.pos):
                         self.restart_game()
                     elif self.game_state.is_setup_phase() and self.random_placement_button.collidepoint(event.pos):
                         self.place_ships_randomly()
-                    # Check player type buttons
-                    elif self.human_button.collidepoint(event.pos):
+                    # Check player side buttons
+                    elif self.player_human_button.collidepoint(event.pos):
                         self.change_player_type("human")
-                    elif self.ai_player_button.collidepoint(event.pos):
-                        self.change_player_type("ai")
-                    # Check AI type buttons
-                    elif self.algorithmic_button.collidepoint(event.pos):
-                        self.change_ai_type("algorithmic")
-                    elif self.transformer_button.collidepoint(event.pos):
-                        self.change_ai_type("transformer")
-                    # Check player AI type buttons
                     elif self.player_algo_button.collidepoint(event.pos):
+                        self.change_player_type("ai")
                         self.change_player_ai_type("algorithmic")
                     elif self.player_trans_button.collidepoint(event.pos):
+                        self.change_player_type("ai")
                         self.change_player_ai_type("transformer")
-                    elif not self.game_state.is_ai_turn() and self.player_type == "human":  # Only handle clicks during player's turn if human
+                    # Check enemy side buttons
+                    elif self.enemy_algo_button.collidepoint(event.pos):
+                        self.change_ai_type("algorithmic")
+                    elif self.enemy_trans_button.collidepoint(event.pos):
+                        self.change_ai_type("transformer")
+                    elif not self.game_state.is_ai_turn() and self.player_type == "human":
                         self.handle_click(event.pos)
-                elif event.button == 3 and not self.game_state.is_ai_turn() and self.player_type == "human":  # Right click
+                elif event.button == 3 and not self.game_state.is_ai_turn() and self.player_type == "human":
                     self.handle_right_click(event.pos)
 
     def handle_click(self, pos):
@@ -316,12 +348,12 @@ class Game:
                         self.game_logger.log_game_end("player")
                 else:
                     self.show_notification("Miss!")
-                    pygame.time.wait(1000)  # Wait to show miss
+                    pygame.time.wait(1000 // self.speed_multiplier)  # Adjusted wait time
                     self.game_state.switch_turn()
                     
                     # Clear notification and show AI turn
                     self.show_notification("AI's turn...")
-                    pygame.time.wait(1500)  # Wait before AI's turn
+                    pygame.time.wait(1500 // self.speed_multiplier)  # Adjusted wait time
                     self.handle_ai_turn()
 
     def handle_ai_turn(self):
@@ -348,11 +380,11 @@ class Game:
                 self.game_logger.log_game_end("ai")
             else:
                 # AI gets another turn after a hit
-                pygame.time.wait(1500)  # Wait to show hit
+                pygame.time.wait(500 // self.speed_multiplier)  # Reduced base wait time and apply speed
                 self.handle_ai_turn()
         else:
             self.show_notification(f"AI misses at {chr(65 + x)}{y + 1}")
-            pygame.time.wait(1000)  # Wait to show miss
+            pygame.time.wait(333 // self.speed_multiplier)  # Reduced base wait time and apply speed
             self.game_state.switch_turn()
             self.show_notification("Your turn!")
 
@@ -365,14 +397,14 @@ class Game:
             self.player_board,
             self.player_board_rect.x,
             self.player_board_rect.y,
-            hide_ships=False  # Show ships on player's board
+            hide_ships=False
         )
         
         self.board_renderer.draw_grid(
             self.ai_board,
             self.ai_board_rect.x,
             self.ai_board_rect.y,
-            hide_ships=True  # Hide ships on enemy's board
+            hide_ships=True
         )
         
         # Draw coordinates and labels
@@ -390,6 +422,16 @@ class Game:
             self.ai_board_rect.x
         )
         
+        # Draw speed control buttons
+        for i in range(3):
+            button_center = (self.speed_button_x, self.speed_button_y + i * (self.speed_button_radius * 2 + self.speed_button_spacing))
+            color = (100, 100, 255) if self.speed_multiplier == i + 1 else (200, 200, 200)
+            pygame.draw.circle(self.screen, color, button_center, self.speed_button_radius)
+            pygame.draw.circle(self.screen, (150, 150, 150), button_center, self.speed_button_radius, 2)
+            speed_text = self.small_font.render(f"x{i+1}", True, (0, 0, 0))
+            speed_rect = speed_text.get_rect(center=button_center)
+            self.screen.blit(speed_text, speed_rect)
+
         # Draw status and notifications
         self.draw_status()
         
@@ -397,81 +439,88 @@ class Game:
         if self.game_state.is_playing_phase():
             turn_color = (0, 255, 0) if self.game_state.is_player_turn else (255, 0, 0)
             turn_text = "Your turn - Click on enemy board to shoot" if self.game_state.is_player_turn and self.player_type == "human" else "AI's turn..."
-            turn_surface = self.font.render(turn_text, True, turn_color)
+            turn_surface = self.small_font.render(turn_text, True, turn_color)  # Using small font
             turn_rect = turn_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.player_board_rect.bottom + 20
+                top=self.random_placement_button.bottom + 5  # Position below random placement button
             )
             self.screen.blit(turn_surface, turn_rect)
         
         # Draw notifications below turn indicator
         if self.notification:
-            notification_surface = self.font.render(self.notification, True, (0, 0, 0))
+            notification_surface = self.small_font.render(self.notification, True, (0, 0, 0))  # Using small font
             notification_rect = notification_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.player_board_rect.bottom + 60
+                top=self.random_placement_button.bottom + 30  # Position below turn indicator
             )
             self.screen.blit(notification_surface, notification_rect)
 
-        # Draw restart button if game is over
-        if self.game_state.is_game_over():
-            pygame.draw.rect(self.screen, (200, 200, 200), self.restart_button)
-            restart_text = self.font.render("Restart Game", True, (0, 0, 0))
-            restart_rect = restart_text.get_rect(center=self.restart_button.center)
-            self.screen.blit(restart_text, restart_rect)
+        # Draw panels
+        # Player panel
+        pygame.draw.rect(self.screen, (240, 240, 240), self.player_panel_rect)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.player_panel_rect, 2)
+
+        # Player buttons
+        # Human button
+        human_color = (100, 100, 255) if self.player_type == "human" else (200, 200, 200)
+        pygame.draw.rect(self.screen, human_color, self.player_human_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.player_human_button, 2)
+        human_text = self.small_font.render("Human", True, (0, 0, 0))  # Using small font
+        human_rect = human_text.get_rect(center=self.player_human_button.center)
+        self.screen.blit(human_text, human_rect)
+
+        # Player Algo button
+        player_algo_color = (100, 100, 255) if self.player_type == "ai" and self.player_ai_type == "algorithmic" else (200, 200, 200)
+        pygame.draw.rect(self.screen, player_algo_color, self.player_algo_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.player_algo_button, 2)
+        player_algo_text = self.small_font.render("Algo AI", True, (0, 0, 0))  # Using small font
+        player_algo_rect = player_algo_text.get_rect(center=self.player_algo_button.center)
+        self.screen.blit(player_algo_text, player_algo_rect)
+
+        # Player Trans button
+        player_trans_color = (255, 100, 255) if self.player_type == "ai" and self.player_ai_type == "transformer" else (200, 200, 200)
+        pygame.draw.rect(self.screen, player_trans_color, self.player_trans_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.player_trans_button, 2)
+        player_trans_text = self.small_font.render("Trans AI", True, (0, 0, 0))  # Using small font
+        player_trans_rect = player_trans_text.get_rect(center=self.player_trans_button.center)
+        self.screen.blit(player_trans_text, player_trans_rect)
+
+        # Enemy panel
+        pygame.draw.rect(self.screen, (240, 240, 240), self.enemy_panel_rect)
+        pygame.draw.rect(self.screen, (200, 200, 200), self.enemy_panel_rect, 2)
+
+        # Enemy buttons
+        # Enemy Algo button
+        enemy_algo_color = (100, 100, 255) if self.enemy_ai_type == "algorithmic" else (200, 200, 200)
+        pygame.draw.rect(self.screen, enemy_algo_color, self.enemy_algo_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.enemy_algo_button, 2)
+        enemy_algo_text = self.small_font.render("Algo AI", True, (0, 0, 0))  # Using small font
+        enemy_algo_rect = enemy_algo_text.get_rect(center=self.enemy_algo_button.center)
+        self.screen.blit(enemy_algo_text, enemy_algo_rect)
+
+        # Enemy Trans button
+        enemy_trans_color = (255, 100, 255) if self.enemy_ai_type == "transformer" else (200, 200, 200)
+        pygame.draw.rect(self.screen, enemy_trans_color, self.enemy_trans_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.enemy_trans_button, 2)
+        enemy_trans_text = self.small_font.render("Trans AI", True, (0, 0, 0))  # Using small font
+        enemy_trans_rect = enemy_trans_text.get_rect(center=self.enemy_trans_button.center)
+        self.screen.blit(enemy_trans_text, enemy_trans_rect)
 
         # Draw random placement button during setup phase
         if self.game_state.is_setup_phase():
             pygame.draw.rect(self.screen, (200, 200, 200), self.random_placement_button)
-            random_text = self.font.render("Random Placement", True, (0, 0, 0))
+            pygame.draw.rect(self.screen, (150, 150, 150), self.random_placement_button, 2)
+            random_text = self.small_font.render("Random Placement", True, (0, 0, 0))  # Using small font
             random_rect = random_text.get_rect(center=self.random_placement_button.center)
             self.screen.blit(random_text, random_rect)
 
-        # Draw player type buttons
-        # Human button
-        human_color = (100, 100, 255) if self.player_type == "human" else (200, 200, 200)
-        pygame.draw.rect(self.screen, human_color, self.human_button)
-        human_text = self.font.render("Human", True, (0, 0, 0))
-        human_rect = human_text.get_rect(center=self.human_button.center)
-        self.screen.blit(human_text, human_rect)
-
-        # AI Player button
-        ai_player_color = (255, 100, 255) if self.player_type == "ai" else (200, 200, 200)
-        pygame.draw.rect(self.screen, ai_player_color, self.ai_player_button)
-        ai_player_text = self.font.render("AI", True, (0, 0, 0))
-        ai_player_rect = ai_player_text.get_rect(center=self.ai_player_button.center)
-        self.screen.blit(ai_player_text, ai_player_rect)
-
-        # Draw AI type buttons
-        # Algorithmic button
-        algorithmic_color = (100, 100, 255) if self.enemy_ai_type == "algorithmic" else (200, 200, 200)
-        pygame.draw.rect(self.screen, algorithmic_color, self.algorithmic_button)
-        algorithmic_text = self.font.render("Algo", True, (0, 0, 0))
-        algorithmic_rect = algorithmic_text.get_rect(center=self.algorithmic_button.center)
-        self.screen.blit(algorithmic_text, algorithmic_rect)
-
-        # Transformer button
-        transformer_color = (255, 100, 255) if self.enemy_ai_type == "transformer" else (200, 200, 200)
-        pygame.draw.rect(self.screen, transformer_color, self.transformer_button)
-        transformer_text = self.font.render("Trans", True, (0, 0, 0))
-        transformer_rect = transformer_text.get_rect(center=self.transformer_button.center)
-        self.screen.blit(transformer_text, transformer_rect)
-
-        # Draw player AI type buttons (only when player type is AI)
-        if self.player_type == "ai":
-            # Player Algorithmic button
-            player_algo_color = (100, 100, 255) if self.player_ai_type == "algorithmic" else (200, 200, 200)
-            pygame.draw.rect(self.screen, player_algo_color, self.player_algo_button)
-            player_algo_text = self.font.render("P.Algo", True, (0, 0, 0))
-            player_algo_rect = player_algo_text.get_rect(center=self.player_algo_button.center)
-            self.screen.blit(player_algo_text, player_algo_rect)
-
-            # Player Transformer button
-            player_trans_color = (255, 100, 255) if self.player_ai_type == "transformer" else (200, 200, 200)
-            pygame.draw.rect(self.screen, player_trans_color, self.player_trans_button)
-            player_trans_text = self.font.render("P.Trans", True, (0, 0, 0))
-            player_trans_rect = player_trans_text.get_rect(center=self.player_trans_button.center)
-            self.screen.blit(player_trans_text, player_trans_rect)
+        # Draw restart button if game is over
+        if self.game_state.is_game_over():
+            pygame.draw.rect(self.screen, (200, 200, 200), self.restart_button)
+            pygame.draw.rect(self.screen, (150, 150, 150), self.restart_button, 2)
+            restart_text = self.small_font.render("Restart Game", True, (0, 0, 0))  # Using small font
+            restart_rect = restart_text.get_rect(center=self.restart_button.center)
+            self.screen.blit(restart_text, restart_rect)
         
         pygame.display.flip()
 
@@ -500,10 +549,10 @@ class Game:
                 status_text = ""
         
         if status_text:
-            status_surface = self.font.render(status_text, True, (0, 0, 0))
+            status_surface = self.small_font.render(status_text, True, (0, 0, 0))  # Using small font
             status_rect = status_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=10  # Keep status text at top
+                top=self.random_placement_button.bottom + 55  # Position below notifications
             )
             self.screen.blit(status_surface, status_rect)
 
@@ -530,7 +579,7 @@ class Game:
                             self.game_logger.log_game_end("player_ai")
                     else:
                         self.show_notification(f"Player AI misses at {chr(65 + x)}{y + 1}")
-                        pygame.time.wait(1000)
+                        pygame.time.wait(333 // self.speed_multiplier)  # Adjusted wait time
                         self.game_state.switch_turn()
                 else:
                     # Enemy AI's turn
