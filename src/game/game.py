@@ -12,7 +12,7 @@ from ui.board_renderer import BoardRenderer
 from game.game_state import GameState
 
 class Game:
-    def __init__(self, ai_difficulty="medium", ai_type="algorithmic"):
+    def __init__(self, ai_type="algorithmic"):
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption(WINDOW_TITLE)
         self.clock = pygame.time.Clock()
@@ -45,7 +45,7 @@ class Game:
         )
         
         # Initialize AI
-        self.ai = self._create_ai(ai_type, ai_difficulty)
+        self.ai = self._create_ai(ai_type)
         self.player_ai = None  # Will be initialized if player type is AI
         
         # Initialize fonts
@@ -77,40 +77,20 @@ class Game:
             40
         )
 
-        # Difficulty buttons
+        # Player type buttons
         button_width = 100
         button_spacing = 20
-        total_width = (button_width * 3) + (button_spacing * 2)
+        total_width = button_width * 2 + button_spacing
         start_x = (WINDOW_WIDTH - total_width) // 2
         
-        self.easy_button = pygame.Rect(
+        self.human_button = pygame.Rect(
             start_x,
             50,
             button_width,
             40
         )
-        self.medium_button = pygame.Rect(
-            start_x + button_width + button_spacing,
-            50,
-            button_width,
-            40
-        )
-        self.hard_button = pygame.Rect(
-            start_x + (button_width + button_spacing) * 2,
-            50,
-            button_width,
-            40
-        )
-
-        # Player type buttons
-        self.human_button = pygame.Rect(
-            start_x - button_width - button_spacing,
-            50,
-            button_width,
-            40
-        )
         self.ai_player_button = pygame.Rect(
-            start_x + total_width + button_spacing,
+            start_x + button_width + button_spacing,
             50,
             button_width,
             40
@@ -144,12 +124,12 @@ class Game:
             40
         )
 
-    def _create_ai(self, ai_type: str, difficulty: str):
+    def _create_ai(self, ai_type: str):
         """Create an AI player of the specified type"""
         if ai_type == "transformer":
             return TransformerPlayer()
         else:
-            return AIPlayer(difficulty=difficulty)
+            return AIPlayer()
 
     def show_notification(self, message, duration=60):
         """Show a temporary notification message"""
@@ -164,14 +144,14 @@ class Game:
         self.player_board = Board()
         self.ai_board = Board()
         self.game_state = GameState()
-        self.ai = self._create_ai(self.enemy_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+        self.ai = self._create_ai(self.enemy_ai_type)
         self.notification = "Game restarted! Place your ships."
         self.notification_timer = self.notification_duration
 
     def place_ships_randomly(self):
         """Place player's ships randomly on the board"""
         self.player_board = Board()  # Clear the board
-        ai = AIPlayer(difficulty="easy")  # Use AI to place ships
+        ai = AIPlayer()  # Use AI to place ships
         ai.place_ships(self.player_board)
         self.game_state.start_playing_phase()
         self.show_notification("Ships placed randomly! Enemy fleet is ready!")
@@ -181,18 +161,12 @@ class Game:
         self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
         self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
 
-    def change_difficulty(self, difficulty):
-        """Change AI difficulty and restart the game"""
-        self.ai = self._create_ai(self.enemy_ai_type, difficulty)
-        self.restart_game()
-        self.show_notification(f"Difficulty changed to {difficulty.capitalize()}!")
-
     def change_ai_type(self, ai_type: str):
         """Change AI type and restart the game"""
         self.enemy_ai_type = ai_type
-        self.ai = self._create_ai(ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+        self.ai = self._create_ai(ai_type)
         if self.player_type == "ai":
-            self.player_ai = self._create_ai(self.player_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+            self.player_ai = self._create_ai(self.player_ai_type)
         self.restart_game()
         self.show_notification(f"AI type changed to {ai_type.capitalize()}!")
 
@@ -200,7 +174,7 @@ class Game:
         """Change player type and restart the game"""
         self.player_type = player_type
         if player_type == "ai":
-            self.player_ai = self._create_ai(self.player_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+            self.player_ai = self._create_ai(self.player_ai_type)
             # Place ships for both AIs
             self.player_ai.place_ships(self.player_board)
             self.ai.place_ships(self.ai_board)
@@ -218,7 +192,7 @@ class Game:
         """Change player AI type and restart the game"""
         self.player_ai_type = ai_type
         if self.player_type == "ai":
-            self.player_ai = self._create_ai(ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+            self.player_ai = self._create_ai(ai_type)
             # Place ships for both AIs
             self.player_ai.place_ships(self.player_board)
             self.ai.place_ships(self.ai_board)
@@ -244,13 +218,6 @@ class Game:
                         self.restart_game()
                     elif self.game_state.is_setup_phase() and self.random_placement_button.collidepoint(event.pos):
                         self.place_ships_randomly()
-                    # Check difficulty buttons
-                    elif self.easy_button.collidepoint(event.pos):
-                        self.change_difficulty("easy")
-                    elif self.medium_button.collidepoint(event.pos):
-                        self.change_difficulty("medium")
-                    elif self.hard_button.collidepoint(event.pos):
-                        self.change_difficulty("hard")
                     # Check player type buttons
                     elif self.human_button.collidepoint(event.pos):
                         self.change_player_type("human")
@@ -459,28 +426,6 @@ class Game:
             random_text = self.font.render("Random Placement", True, (0, 0, 0))
             random_rect = random_text.get_rect(center=self.random_placement_button.center)
             self.screen.blit(random_text, random_rect)
-
-        # Draw difficulty buttons
-        # Easy button
-        easy_color = (100, 255, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "easy" else (200, 200, 200)
-        pygame.draw.rect(self.screen, easy_color, self.easy_button)
-        easy_text = self.font.render("Easy", True, (0, 0, 0))
-        easy_rect = easy_text.get_rect(center=self.easy_button.center)
-        self.screen.blit(easy_text, easy_rect)
-
-        # Medium button
-        medium_color = (255, 255, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "medium" else (200, 200, 200)
-        pygame.draw.rect(self.screen, medium_color, self.medium_button)
-        medium_text = self.font.render("Medium", True, (0, 0, 0))
-        medium_rect = medium_text.get_rect(center=self.medium_button.center)
-        self.screen.blit(medium_text, medium_rect)
-
-        # Hard button
-        hard_color = (255, 100, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "hard" else (200, 200, 200)
-        pygame.draw.rect(self.screen, hard_color, self.hard_button)
-        hard_text = self.font.render("Hard", True, (0, 0, 0))
-        hard_rect = hard_text.get_rect(center=self.hard_button.center)
-        self.screen.blit(hard_text, hard_rect)
 
         # Draw player type buttons
         # Human button
