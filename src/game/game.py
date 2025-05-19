@@ -146,6 +146,14 @@ class Game:
             35  # Reduced height
         )
 
+        # Start button
+        self.start_button = pygame.Rect(
+            WINDOW_WIDTH // 2 - 100,
+            WINDOW_HEIGHT - 50,  # Moved up from 80
+            200,
+            35  # Reduced height
+        )
+
         # Initialize AI
         self.ai = self._create_ai(ai_type)
         self.player_ai = None  # Will be initialized if player type is AI
@@ -178,14 +186,15 @@ class Game:
         """Place player's ships randomly on the board"""
         self.player_board = Board()  # Clear the board
         ai = AIPlayer()  # Use AI to place ships
-        ai.place_ships(self.player_board)
-        self.game_state.start_playing_phase()
+        ai.place_ships(self.player_board)        
         self.show_notification("Ships placed randomly! Enemy fleet is ready!")
         # Place AI ships
         self.ai.place_ships(self.ai_board)
         # Log initial board states
         self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
         self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
+        # Update game state to reflect all ships are placed
+        self.game_state.current_ship_index = len(self.game_state.ships_to_place)
 
     def change_ai_type(self, ai_type: str):
         """Change AI type and restart the game"""
@@ -252,6 +261,9 @@ class Game:
                         self.restart_game()
                     elif self.game_state.is_setup_phase() and self.random_placement_button.collidepoint(event.pos):
                         self.place_ships_randomly()
+                    elif self.game_state.is_setup_phase() and self.game_state.is_ship_placement_complete() and self.start_button.collidepoint(event.pos):
+                        self.game_state.start_playing_phase()
+                        self.show_notification("Game started! Your turn!")
                     # Check player side buttons
                     elif self.player_human_button.collidepoint(event.pos):
                         self.change_player_type("human")
@@ -320,7 +332,6 @@ class Game:
                         # Place AI ships
                         self.ai.place_ships(self.ai_board)
                         self.show_notification("Enemy fleet is ready!")
-                        self.game_state.start_playing_phase()
                 else:
                     self.show_notification("Invalid placement! Ships must have 1 cell gap between them.")
 
@@ -535,6 +546,14 @@ class Game:
             restart_text = self.small_font.render("Restart Game", True, (0, 0, 0))  # Using small font
             restart_rect = restart_text.get_rect(center=self.restart_button.center)
             self.screen.blit(restart_text, restart_rect)
+
+        # Draw start button
+        if self.game_state.is_setup_phase() and self.game_state.is_ship_placement_complete():
+            pygame.draw.rect(self.screen, (0, 200, 0), self.start_button)  # Changed to green
+            pygame.draw.rect(self.screen, (150, 150, 150), self.start_button, 2)
+            start_text = self.small_font.render("Start Game", True, (0, 0, 0))  # Using small font
+            start_rect = start_text.get_rect(center=self.start_button.center)
+            self.screen.blit(start_text, start_rect)
         
         pygame.display.flip()
 
@@ -566,7 +585,7 @@ class Game:
             status_surface = self.small_font.render(status_text, True, (0, 0, 0))
             status_rect = status_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.player_board_rect.bottom + 20  # Position below the grids
+                top=10  # Position above the grids
             )
             self.screen.blit(status_surface, status_rect)
 
