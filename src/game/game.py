@@ -30,6 +30,9 @@ class Game:
         self.player_ai_type = "algorithmic"  # Default to algorithmic AI
         self.enemy_ai_type = ai_type  # Type of AI opponent
         
+        # Auto-restart state for AI vs AI
+        self.auto_restart = False
+        
         # Speed control
         self.speed_multiplier = 1  # Default speed
         self.speed_button_radius = 15
@@ -134,6 +137,14 @@ class Game:
         self.random_placement_button = pygame.Rect(
             self.speed_button_x - button_size // 2,  # Center under speed buttons
             self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 3 + 10,  # Below x3 button
+            button_size,
+            button_size
+        )
+
+        # AI vs AI button (square, bottom right corner)
+        self.ai_vs_ai_button = pygame.Rect(
+            WINDOW_WIDTH - button_size - 20,  # 20 pixels from right edge
+            WINDOW_HEIGHT - button_size - 20,  # 20 pixels from bottom
             button_size,
             button_size
         )
@@ -264,6 +275,22 @@ class Game:
                     elif self.game_state.is_setup_phase() and self.game_state.is_ship_placement_complete() and self.start_button.collidepoint(event.pos):
                         self.game_state.start_playing_phase()
                         self.show_notification("Game started! Your turn!")
+                    elif self.ai_vs_ai_button.collidepoint(event.pos):
+                        # Toggle auto-restart state
+                        self.auto_restart = not self.auto_restart
+                        if self.auto_restart:
+                            # Set both players to algorithmic AI
+                            self.change_player_type("ai")
+                            self.change_player_ai_type("algorithmic")
+                            self.change_ai_type("algorithmic")
+                            # Set speed to x3
+                            self.speed_multiplier = 3
+                            # Place ships randomly and start game
+                            self.place_ships_randomly()
+                            self.game_state.start_playing_phase()
+                            self.show_notification("AI vs AI battle started with auto-restart!")
+                        else:
+                            self.show_notification("Auto-restart disabled")
                     # Check player side buttons
                     elif self.player_human_button.collidepoint(event.pos):
                         self.change_player_type("human")
@@ -554,6 +581,14 @@ class Game:
             start_text = self.small_font.render("Start Game", True, (0, 0, 0))  # Using small font
             start_rect = start_text.get_rect(center=self.start_button.center)
             self.screen.blit(start_text, start_rect)
+
+        # Draw AI vs AI button
+        button_color = (0, 200, 0) if self.auto_restart else (200, 200, 200)
+        pygame.draw.rect(self.screen, button_color, self.ai_vs_ai_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.ai_vs_ai_button, 2)
+        ai_vs_ai_text = self.small_font.render("AI vs AI", True, (0, 0, 0))
+        ai_vs_ai_rect = ai_vs_ai_text.get_rect(center=self.ai_vs_ai_button.center)
+        self.screen.blit(ai_vs_ai_text, ai_vs_ai_rect)
         
         pygame.display.flip()
 
@@ -610,6 +645,11 @@ class Game:
                             self.game_state.set_game_over()
                             self.show_notification("Game Over! Player AI wins!")
                             self.game_logger.log_game_end("player_ai")
+                            # Auto-restart if enabled
+                            if self.auto_restart:
+                                self.restart_game()
+                                self.place_ships_randomly()
+                                self.game_state.start_playing_phase()
                     else:
                         self.show_notification(f"Player AI misses at {chr(65 + x)}{y + 1}")
                         pygame.time.wait(333 // self.speed_multiplier)  # Adjusted wait time
