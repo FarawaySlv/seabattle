@@ -6,12 +6,13 @@ from utils.constants import (
 from models.board import Board
 from models.ship import Ship
 from models.ai_player import AIPlayer
+from models.transformer_player import TransformerPlayer
 from models.game_logger import GameLogger
 from ui.board_renderer import BoardRenderer
 from game.game_state import GameState
 
 class Game:
-    def __init__(self, ai_difficulty="medium"):
+    def __init__(self, ai_difficulty="medium", ai_type="algorithmic"):
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
         pygame.display.set_caption(WINDOW_TITLE)
         self.clock = pygame.time.Clock()
@@ -22,10 +23,12 @@ class Game:
         self.ai_board = Board()
         self.board_renderer = BoardRenderer(self.screen)
         self.game_state = GameState()
-        self.game_logger = GameLogger()  # Initialize game logger
+        self.game_logger = GameLogger()
         
         # Player type (human or AI)
         self.player_type = "human"  # Default to human player
+        self.player_ai_type = "algorithmic"  # Default to algorithmic AI
+        self.enemy_ai_type = ai_type  # Type of AI opponent
         
         # Initialize board rectangles
         self.player_board_rect = pygame.Rect(
@@ -42,7 +45,7 @@ class Game:
         )
         
         # Initialize AI
-        self.ai = AIPlayer(difficulty=ai_difficulty)
+        self.ai = self._create_ai(ai_type, ai_difficulty)
         self.player_ai = None  # Will be initialized if player type is AI
         
         # Initialize fonts
@@ -56,7 +59,7 @@ class Game:
         
         # Ship placement
         self.selected_ship = None
-        self.ship_orientation = True  # True for horizontal, False for vertical
+        self.ship_orientation = True
 
         # Restart button
         self.restart_button = pygame.Rect(
@@ -113,6 +116,41 @@ class Game:
             40
         )
 
+        # AI type buttons
+        self.algorithmic_button = pygame.Rect(
+            start_x - button_width - button_spacing,
+            100,
+            button_width,
+            40
+        )
+        self.transformer_button = pygame.Rect(
+            start_x + total_width + button_spacing,
+            100,
+            button_width,
+            40
+        )
+
+        # Player AI type buttons (only shown when player type is AI)
+        self.player_algo_button = pygame.Rect(
+            start_x - button_width - button_spacing,
+            150,
+            button_width,
+            40
+        )
+        self.player_trans_button = pygame.Rect(
+            start_x + total_width + button_spacing,
+            150,
+            button_width,
+            40
+        )
+
+    def _create_ai(self, ai_type: str, difficulty: str):
+        """Create an AI player of the specified type"""
+        if ai_type == "transformer":
+            return TransformerPlayer()
+        else:
+            return AIPlayer(difficulty=difficulty)
+
     def show_notification(self, message, duration=60):
         """Show a temporary notification message"""
         self.notification = message
@@ -126,7 +164,7 @@ class Game:
         self.player_board = Board()
         self.ai_board = Board()
         self.game_state = GameState()
-        self.ai = AIPlayer(difficulty=self.ai.difficulty)
+        self.ai = self._create_ai(self.enemy_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
         self.notification = "Game restarted! Place your ships."
         self.notification_timer = self.notification_duration
 
@@ -145,15 +183,24 @@ class Game:
 
     def change_difficulty(self, difficulty):
         """Change AI difficulty and restart the game"""
-        self.ai = AIPlayer(difficulty=difficulty)
+        self.ai = self._create_ai(self.enemy_ai_type, difficulty)
         self.restart_game()
         self.show_notification(f"Difficulty changed to {difficulty.capitalize()}!")
 
-    def change_player_type(self, player_type):
+    def change_ai_type(self, ai_type: str):
+        """Change AI type and restart the game"""
+        self.enemy_ai_type = ai_type
+        self.ai = self._create_ai(ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+        if self.player_type == "ai":
+            self.player_ai = self._create_ai(self.player_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+        self.restart_game()
+        self.show_notification(f"AI type changed to {ai_type.capitalize()}!")
+
+    def change_player_type(self, player_type: str):
         """Change player type and restart the game"""
         self.player_type = player_type
         if player_type == "ai":
-            self.player_ai = AIPlayer(difficulty=self.ai.difficulty)
+            self.player_ai = self._create_ai(self.player_ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
             # Place ships for both AIs
             self.player_ai.place_ships(self.player_board)
             self.ai.place_ships(self.ai_board)
@@ -166,6 +213,20 @@ class Game:
             self.game_logger.set_player_type("human")
         self.restart_game()
         self.show_notification(f"Player type changed to {player_type.capitalize()}!")
+
+    def change_player_ai_type(self, ai_type: str):
+        """Change player AI type and restart the game"""
+        self.player_ai_type = ai_type
+        if self.player_type == "ai":
+            self.player_ai = self._create_ai(ai_type, self.ai.difficulty if hasattr(self.ai, 'difficulty') else "medium")
+            # Place ships for both AIs
+            self.player_ai.place_ships(self.player_board)
+            self.ai.place_ships(self.ai_board)
+            # Log initial board states
+            self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
+            self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
+        self.restart_game()
+        self.show_notification(f"Player AI type changed to {ai_type.capitalize()}!")
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -195,6 +256,16 @@ class Game:
                         self.change_player_type("human")
                     elif self.ai_player_button.collidepoint(event.pos):
                         self.change_player_type("ai")
+                    # Check AI type buttons
+                    elif self.algorithmic_button.collidepoint(event.pos):
+                        self.change_ai_type("algorithmic")
+                    elif self.transformer_button.collidepoint(event.pos):
+                        self.change_ai_type("transformer")
+                    # Check player AI type buttons
+                    elif self.player_algo_button.collidepoint(event.pos):
+                        self.change_player_ai_type("algorithmic")
+                    elif self.player_trans_button.collidepoint(event.pos):
+                        self.change_player_ai_type("transformer")
                     elif not self.game_state.is_ai_turn() and self.player_type == "human":  # Only handle clicks during player's turn if human
                         self.handle_click(event.pos)
                 elif event.button == 3 and not self.game_state.is_ai_turn() and self.player_type == "human":  # Right click
@@ -391,21 +462,21 @@ class Game:
 
         # Draw difficulty buttons
         # Easy button
-        easy_color = (100, 255, 100) if self.ai.difficulty == "easy" else (200, 200, 200)
+        easy_color = (100, 255, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "easy" else (200, 200, 200)
         pygame.draw.rect(self.screen, easy_color, self.easy_button)
         easy_text = self.font.render("Easy", True, (0, 0, 0))
         easy_rect = easy_text.get_rect(center=self.easy_button.center)
         self.screen.blit(easy_text, easy_rect)
 
         # Medium button
-        medium_color = (255, 255, 100) if self.ai.difficulty == "medium" else (200, 200, 200)
+        medium_color = (255, 255, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "medium" else (200, 200, 200)
         pygame.draw.rect(self.screen, medium_color, self.medium_button)
         medium_text = self.font.render("Medium", True, (0, 0, 0))
         medium_rect = medium_text.get_rect(center=self.medium_button.center)
         self.screen.blit(medium_text, medium_rect)
 
         # Hard button
-        hard_color = (255, 100, 100) if self.ai.difficulty == "hard" else (200, 200, 200)
+        hard_color = (255, 100, 100) if hasattr(self.ai, 'difficulty') and self.ai.difficulty == "hard" else (200, 200, 200)
         pygame.draw.rect(self.screen, hard_color, self.hard_button)
         hard_text = self.font.render("Hard", True, (0, 0, 0))
         hard_rect = hard_text.get_rect(center=self.hard_button.center)
@@ -425,6 +496,37 @@ class Game:
         ai_player_text = self.font.render("AI", True, (0, 0, 0))
         ai_player_rect = ai_player_text.get_rect(center=self.ai_player_button.center)
         self.screen.blit(ai_player_text, ai_player_rect)
+
+        # Draw AI type buttons
+        # Algorithmic button
+        algorithmic_color = (100, 100, 255) if self.enemy_ai_type == "algorithmic" else (200, 200, 200)
+        pygame.draw.rect(self.screen, algorithmic_color, self.algorithmic_button)
+        algorithmic_text = self.font.render("Algo", True, (0, 0, 0))
+        algorithmic_rect = algorithmic_text.get_rect(center=self.algorithmic_button.center)
+        self.screen.blit(algorithmic_text, algorithmic_rect)
+
+        # Transformer button
+        transformer_color = (255, 100, 255) if self.enemy_ai_type == "transformer" else (200, 200, 200)
+        pygame.draw.rect(self.screen, transformer_color, self.transformer_button)
+        transformer_text = self.font.render("Trans", True, (0, 0, 0))
+        transformer_rect = transformer_text.get_rect(center=self.transformer_button.center)
+        self.screen.blit(transformer_text, transformer_rect)
+
+        # Draw player AI type buttons (only when player type is AI)
+        if self.player_type == "ai":
+            # Player Algorithmic button
+            player_algo_color = (100, 100, 255) if self.player_ai_type == "algorithmic" else (200, 200, 200)
+            pygame.draw.rect(self.screen, player_algo_color, self.player_algo_button)
+            player_algo_text = self.font.render("P.Algo", True, (0, 0, 0))
+            player_algo_rect = player_algo_text.get_rect(center=self.player_algo_button.center)
+            self.screen.blit(player_algo_text, player_algo_rect)
+
+            # Player Transformer button
+            player_trans_color = (255, 100, 255) if self.player_ai_type == "transformer" else (200, 200, 200)
+            pygame.draw.rect(self.screen, player_trans_color, self.player_trans_button)
+            player_trans_text = self.font.render("P.Trans", True, (0, 0, 0))
+            player_trans_rect = player_trans_text.get_rect(center=self.player_trans_button.center)
+            self.screen.blit(player_trans_text, player_trans_rect)
         
         pygame.display.flip()
 
