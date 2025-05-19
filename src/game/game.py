@@ -129,12 +129,13 @@ class Game:
             button_height
         )
 
-        # Random placement button
+        # Random placement button (square, below speed buttons)
+        button_size = 60  # Square size
         self.random_placement_button = pygame.Rect(
-            WINDOW_WIDTH // 2 - 100,
-            self.player_board_rect.bottom + 10,  # Position below the grids
-            200,
-            35  # Reduced height
+            self.speed_button_x - button_size // 2,  # Center under speed buttons
+            self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 3 + 10,  # Below x3 button
+            button_size,
+            button_size
         )
 
         # Restart button
@@ -392,6 +393,9 @@ class Game:
         """Draw the game state"""
         self.screen.fill(WHITE)
         
+        # Draw status and notifications first
+        self.draw_status()
+        
         # Draw both boards
         self.board_renderer.draw_grid(
             self.player_board,
@@ -432,26 +436,23 @@ class Game:
             speed_rect = speed_text.get_rect(center=button_center)
             self.screen.blit(speed_text, speed_rect)
 
-        # Draw status and notifications
-        self.draw_status()
-        
         # Draw turn indicator below the grids only during playing phase
         if self.game_state.is_playing_phase():
             turn_color = (0, 255, 0) if self.game_state.is_player_turn else (255, 0, 0)
             turn_text = "Your turn - Click on enemy board to shoot" if self.game_state.is_player_turn and self.player_type == "human" else "AI's turn..."
-            turn_surface = self.small_font.render(turn_text, True, turn_color)  # Using small font
+            turn_surface = self.small_font.render(turn_text, True, turn_color)
             turn_rect = turn_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.random_placement_button.bottom + 5  # Position below random placement button
+                top=self.player_board_rect.bottom + 20
             )
             self.screen.blit(turn_surface, turn_rect)
         
         # Draw notifications below turn indicator
         if self.notification:
-            notification_surface = self.small_font.render(self.notification, True, (0, 0, 0))  # Using small font
+            notification_surface = self.small_font.render(self.notification, True, (0, 0, 0))
             notification_rect = notification_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.random_placement_button.bottom + 30  # Position below turn indicator
+                top=self.player_board_rect.bottom + 60
             )
             self.screen.blit(notification_surface, notification_rect)
 
@@ -508,11 +509,24 @@ class Game:
 
         # Draw random placement button during setup phase
         if self.game_state.is_setup_phase():
+            # Draw button background
             pygame.draw.rect(self.screen, (200, 200, 200), self.random_placement_button)
             pygame.draw.rect(self.screen, (150, 150, 150), self.random_placement_button, 2)
-            random_text = self.small_font.render("Random Placement", True, (0, 0, 0))  # Using small font
-            random_rect = random_text.get_rect(center=self.random_placement_button.center)
-            self.screen.blit(random_text, random_rect)
+            
+            # Draw wrapped text
+            text = "Random\nPlace"
+            lines = text.split('\n')
+            line_height = self.small_font.get_height()
+            total_height = line_height * len(lines)
+            start_y = self.random_placement_button.y + (self.random_placement_button.height - total_height) // 2
+            
+            for i, line in enumerate(lines):
+                text_surface = self.small_font.render(line, True, (0, 0, 0))
+                text_rect = text_surface.get_rect(
+                    centerx=self.random_placement_button.centerx,
+                    top=start_y + i * line_height
+                )
+                self.screen.blit(text_surface, text_rect)
 
         # Draw restart button if game is over
         if self.game_state.is_game_over():
@@ -549,10 +563,10 @@ class Game:
                 status_text = ""
         
         if status_text:
-            status_surface = self.small_font.render(status_text, True, (0, 0, 0))  # Using small font
+            status_surface = self.small_font.render(status_text, True, (0, 0, 0))
             status_rect = status_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.random_placement_button.bottom + 55  # Position below notifications
+                top=self.player_board_rect.bottom + 20  # Position below the grids
             )
             self.screen.blit(status_surface, status_rect)
 
