@@ -417,6 +417,11 @@ class Game:
                 self.game_state.set_game_over()
                 self.show_notification("Game Over! AI wins!")
                 self.game_logger.log_game_end("ai")
+                # Auto-restart if enabled
+                if self.auto_restart:
+                    self.restart_game()
+                    self.place_ships_randomly()
+                    self.game_state.start_playing_phase()
             else:
                 # AI gets another turn after a hit
                 pygame.time.wait(500 // self.speed_multiplier)  # Reduced base wait time and apply speed
