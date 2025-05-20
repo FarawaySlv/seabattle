@@ -343,24 +343,28 @@ class Game:
         if self.game_state.is_ship_placement_complete():
             return
             
-        x = (pos[0] - GRID_OFFSET_X) // CELL_SIZE
-        y = (pos[1] - GRID_OFFSET_Y) // CELL_SIZE
-        if 0 <= x < 10 and 0 <= y < 10:
-            ship_size = self.game_state.get_current_ship_size()
-            if ship_size:
-                ship = Ship(ship_size)
-                if self.player_board.place_ship(ship, x, y, self.game_state.horizontal):
-                    self.show_notification(f"Ship of size {ship_size} placed!")
-                    self.game_state.next_ship()
-                    
-                    # Check if all ships are placed
-                    if self.game_state.is_ship_placement_complete():
-                        self.show_notification("Your fleet is ready for battle!")
-                        # Place AI ships
-                        self.ai.place_ships(self.ai_board)
-                        self.show_notification("Enemy fleet is ready!")
-                else:
-                    self.show_notification("Invalid placement! Ships must have 1 cell gap between them.")
+        # Check if click is on player's board
+        if self.player_board_rect.collidepoint(pos):
+            # Convert screen coordinates to grid coordinates using the correct board rect
+            x = (pos[0] - self.player_board_rect.x) // CELL_SIZE
+            y = (pos[1] - self.player_board_rect.y) // CELL_SIZE
+            
+            if 0 <= x < 10 and 0 <= y < 10:
+                ship_size = self.game_state.get_current_ship_size()
+                if ship_size:
+                    ship = Ship(ship_size)
+                    if self.player_board.place_ship(ship, x, y, self.game_state.horizontal):
+                        self.show_notification(f"Ship of size {ship_size} placed!")
+                        self.game_state.next_ship()
+                        
+                        # Check if all ships are placed
+                        if self.game_state.is_ship_placement_complete():
+                            self.show_notification("Your fleet is ready for battle!")
+                            # Place AI ships
+                            self.ai.place_ships(self.ai_board)
+                            self.show_notification("Enemy fleet is ready!")
+                    else:
+                        self.show_notification("Invalid placement! Ships must have 1 cell gap between them.")
 
     def handle_playing_click(self, pos):
         """Handle clicks during the playing phase"""

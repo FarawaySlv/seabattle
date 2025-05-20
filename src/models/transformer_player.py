@@ -171,23 +171,37 @@ class TransformerPlayer:
             temperature = 0.2
             output = output / temperature
             
-            # 5. Get top 5 moves for better exploration
+            # 5. Find the best probability and similar moves
             flat_output = output.view(-1)
-            top_k_values, top_k_indices = torch.topk(flat_output, min(5, flat_output.numel()))
+            best_value = torch.max(flat_output).item()
             
-            # Convert indices to coordinates and filter valid moves
-            valid_moves = []
-            for idx in top_k_indices:
+            # Print top 5 results
+            top_k_values, top_k_indices = torch.topk(flat_output, min(5, flat_output.numel()))
+            print("\nTop 5 predicted moves:")
+            for i, (value, idx) in enumerate(zip(top_k_values, top_k_indices)):
                 x = idx.item() % self.board_size
                 y = idx.item() // self.board_size
-                if board.get_cell_state(x, y) not in [2, 3, 4]:  # Only add if not already shot
-                    valid_moves.append((x, y))
+                cell_state = board.get_cell_state(x, y)
+                state_str = "valid" if cell_state not in [2, 3, 4] else "invalid"
+                print(f"{i+1}. Position ({x}, {y}) - Probability: {value.item():.4f} - State: {state_str}")
             
-            # If we have valid moves from top-k, choose randomly among them
-            if valid_moves:
-                x, y = random.choice(valid_moves)
+            # Find all moves with similar probability (within 5% of the best)
+            similar_moves = []
+            threshold = best_value * 0.95  # 5% threshold
+            
+            for i in range(len(flat_output)):
+                if flat_output[i].item() >= threshold:
+                    x = i % self.board_size
+                    y = i // self.board_size
+                    if board.get_cell_state(x, y) not in [2, 3, 4]:  # Only add if not already shot
+                        similar_moves.append((x, y))
+            
+            # If we have similar moves, choose randomly among them
+            if similar_moves:
+                x, y = random.choice(similar_moves)
+                print(f"Selected from {len(similar_moves)} similar moves: ({x}, {y})")
             else:
-                # If no valid moves in top-k, find all valid moves
+                # If no similar moves, find all valid moves
                 valid_moves = []
                 for i in range(self.board_size):
                     for j in range(self.board_size):
@@ -196,10 +210,12 @@ class TransformerPlayer:
                 
                 if valid_moves:
                     x, y = random.choice(valid_moves)
+                    print(f"No similar moves found, selected from {len(valid_moves)} valid moves: ({x}, {y})")
                 else:
                     # If no valid moves (shouldn't happen), pick any random position
                     x = random.randint(0, self.board_size - 1)
                     y = random.randint(0, self.board_size - 1)
+                    print(f"No valid moves found, selected random position: ({x}, {y})")
         
         return x, y
 
