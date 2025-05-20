@@ -94,7 +94,7 @@ class Game:
         # Player side panel (left)
         self.player_panel_rect = pygame.Rect(
             self.player_board_rect.x,
-            GRID_OFFSET_Y + 20,  # Reduced top margin
+            GRID_OFFSET_Y,  # Reduced top margin
             self.player_board_rect.width,
             panel_height
         )
@@ -126,7 +126,7 @@ class Game:
         # Enemy side panel (right)
         self.enemy_panel_rect = pygame.Rect(
             self.ai_board_rect.x,
-            GRID_OFFSET_Y + 20,  # Reduced top margin
+            GRID_OFFSET_Y,  # Reduced top margin
             self.ai_board_rect.width,
             panel_height
         )
@@ -495,7 +495,7 @@ class Game:
             notification_surface = self.small_font.render(self.notification, True, (0, 0, 0))
             notification_rect = notification_surface.get_rect(
                 centerx=self.screen.get_rect().centerx,
-                top=self.player_board_rect.bottom + 60
+                top=self.player_board_rect.bottom + 40
             )
             self.screen.blit(notification_surface, notification_rect)
 

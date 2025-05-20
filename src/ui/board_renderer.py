@@ -1,6 +1,6 @@
 import pygame
 from utils.constants import (
-    CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y,
+    CELL_SIZE, GRID_OFFSET_X, GRID_OFFSET_Y, LABEL_OFFSET,
     WHITE, BLACK, BLUE, RED, GRAY, ORANGE
 )
 
@@ -79,17 +79,17 @@ class BoardRenderer:
         """Draw coordinate labels (A-J, 0-9)"""
         # Use system font instead of default font
         try:
-            font = pygame.font.SysFont('arial', 28)
+            font = pygame.font.SysFont('arial', 22)  # Reduced font size by 20%
         except:
             # Fallback to any available system font
-            font = pygame.font.SysFont(None, 28)
+            font = pygame.font.SysFont(None, 22)  # Reduced font size by 20%
             
         # Draw column labels (A-J)
         for i in range(10):
             text = font.render(chr(65 + i), True, (0, 0, 0))
             text_rect = text.get_rect(
                 centerx=x + i * CELL_SIZE + CELL_SIZE // 2,
-                top=y - 30
+                top=y - LABEL_OFFSET
             )
             self.screen.blit(text, text_rect)
         
@@ -113,11 +113,11 @@ class BoardRenderer:
             
         # Player's board label
         text = font.render("Your Board", True, BLACK)
-        text_rect = text.get_rect(center=(offset_x + 5 * CELL_SIZE, offset_y - 50))
+        text_rect = text.get_rect(center=(offset_x + 5 * CELL_SIZE, 60))
         self.screen.blit(text, text_rect)
 
         # Enemy's board label
         if second_grid_x:
             text = font.render("Enemy Board", True, BLACK)
-            text_rect = text.get_rect(center=(second_grid_x + 5 * CELL_SIZE, offset_y - 50))
+            text_rect = text.get_rect(center=(second_grid_x + 5 * CELL_SIZE, 60))
             self.screen.blit(text, text_rect) 

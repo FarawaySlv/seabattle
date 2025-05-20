@@ -15,9 +15,11 @@ ORANGE = (255, 165, 0)  # For partially hit ships
 GRID_SIZE = 10
 CELL_SIZE = 40
 GRID_OFFSET_X = 100
-GRID_OFFSET_Y = 20
+GRID_OFFSET_Y = 90  # Increased to make room for panels and labels
 GRID_SPACING = 100
 RIGHT_MARGIN = 60  # New margin after second grid
+LABEL_OFFSET = 22  # Space for coordinate labels
+BUTTON_PANEL_OFFSET = 60  # Space for button panels
 
 # Ship settings
 SHIPS = {
