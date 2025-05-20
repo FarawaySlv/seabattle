@@ -1,16 +1,23 @@
+import os
+import sys
+
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
+
 import torch
 import torch.nn as nn
 import json
-import os
 import random
 from typing import List, Tuple, Dict
 import numpy as np
 from models.board import Board
 from models.ship import Ship
 from utils.constants import SHIPS, GRID_SIZE
-from models.training_data import TrainingData
+from transformers import DistilBertModel, DistilBertConfig
 
 class TransformerPlayer:
+    """A Battleship player that uses a trained transformer model to make decisions."""
     def __init__(self, model_path: str = "models/battleship/checkpoints", config_path: str = "models/battleship/configs/model_config.json"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = self._load_config(config_path)
@@ -40,29 +47,27 @@ class TransformerPlayer:
             return json.load(f)
     
     def _create_model(self) -> nn.Module:
-        """Create transformer model based on configuration"""
-        class BattleshipTransformer(nn.Module):
+        """Create DistilBERT-based model"""
+        class BattleshipDistilBERT(nn.Module):
             def __init__(self, full_config):
                 super().__init__()
                 self.board_size = full_config["input_format"]["board_size"]
                 config = full_config["architecture"]
                 
-                # Flatten the board for embedding
-                self.embedding = nn.Embedding(config["vocab_size"], config["hidden_dim"])
-                self.pos_embedding = nn.Embedding(self.board_size * self.board_size, config["hidden_dim"])
-                
-                encoder_layer = nn.TransformerEncoderLayer(
-                    d_model=config["hidden_dim"],
-                    nhead=config["num_heads"],
-                    dim_feedforward=config["hidden_dim"] * 4,
-                    dropout=config["dropout"],
-                    batch_first=True
-                )
-                self.transformer = nn.TransformerEncoder(
-                    encoder_layer,
-                    num_layers=config["num_layers"]
+                # Initialize DistilBERT with custom configuration
+                bert_config = DistilBertConfig(
+                    vocab_size=config["vocab_size"],
+                    hidden_size=config["hidden_dim"],
+                    num_hidden_layers=config["num_layers"],
+                    num_attention_heads=config["num_heads"],
+                    hidden_dropout_prob=config["dropout"],
+                    attention_probs_dropout_prob=config["dropout"],
+                    max_position_embeddings=self.board_size * self.board_size + 1  # +1 for [CLS] token
                 )
                 
+                self.bert = DistilBertModel(bert_config)
+                
+                # Additional layers for board prediction
                 self.fc = nn.Sequential(
                     nn.Linear(config["hidden_dim"], config["hidden_dim"]),
                     nn.ReLU(),
@@ -70,32 +75,35 @@ class TransformerPlayer:
                     nn.Linear(config["hidden_dim"], self.board_size * self.board_size)
                 )
             
-            def forward(self, x, mask=None):
+            def forward(self, x, attention_mask=None):
                 # x shape: (batch_size, board_size, board_size)
                 batch_size = x.shape[0]
                 
-                # Flatten the board
+                # Flatten the board and add [CLS] token
                 x = x.view(batch_size, -1)  # (batch_size, board_size * board_size)
+                cls_token = torch.zeros((batch_size, 1), dtype=torch.long, device=x.device)
+                x = torch.cat([cls_token, x], dim=1)  # Add [CLS] token
                 
-                # Create position embeddings
-                positions = torch.arange(self.board_size * self.board_size, device=x.device).unsqueeze(0).expand(batch_size, -1)
+                # Create attention mask
+                if attention_mask is None:
+                    attention_mask = torch.ones_like(x)
                 
-                # Get embeddings
-                x = self.embedding(x) + self.pos_embedding(positions)
+                # Get BERT output
+                outputs = self.bert(
+                    input_ids=x,
+                    attention_mask=attention_mask
+                )
                 
-                # Apply transformer
-                x = self.transformer(x, mask)
-                
-                # Get last hidden state
-                x = x[:, -1]
+                # Use [CLS] token output for prediction
+                cls_output = outputs.last_hidden_state[:, 0]
                 
                 # Project to board size
-                x = self.fc(x)
+                x = self.fc(cls_output)
                 x = x.view(batch_size, self.board_size, self.board_size)
                 
                 return x
         
-        return BattleshipTransformer(self.config)
+        return BattleshipDistilBERT(self.config)
 
     def place_ships(self, board: Board):
         """Place ships randomly on the board"""

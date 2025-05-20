@@ -1,9 +1,10 @@
 import torch
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import numpy as np
 import json
 import os
 from datetime import datetime
+import random
 
 class TrainingData:
     def __init__(self, board_size: int = 10, data_dir: str = "models/battleship/data"):
@@ -16,49 +17,43 @@ class TrainingData:
             "results": [],
             "ship_positions": []
         }
+        self.current_batch_index = 0
         os.makedirs(data_dir, exist_ok=True)
     
     def load_from_logs(self, min_games: int = 100) -> bool:
         """Load training data from game logs"""
         if not os.path.exists(self.data_dir):
+            print(f"Data directory not found: {self.data_dir}")
             return False
             
-        # Get all log files
-        log_files = [f for f in os.listdir(self.data_dir) if f.endswith('.json')]
-        if len(log_files) < min_games:
-            return False
-            
-        # Load each game
-        for log_file in log_files:
-            with open(os.path.join(self.data_dir, log_file), 'r') as f:
-                game_data = json.load(f)
-                
-                # Convert game data to training format
-                game = {
-                    "board_states": [],
-                    "moves": [],
-                    "results": game_data["winner"],
-                    "ship_positions": []
-                }
-                
-                # Add initial board state
-                if game_data["initial_board_player"]:
-                    game["board_states"].append(game_data["initial_board_player"])
-                
-                # Add moves
-                current_board = [row[:] for row in game_data["initial_board_player"]] if game_data["initial_board_player"] else [[0] * self.board_size for _ in range(self.board_size)]
-                
-                for move in game_data["moves"]:
-                    # Update board state
-                    x, y = move["x"], move["y"]
-                    current_board[y][x] = 2 if move["hit"] else 3  # 2 for hit, 3 for miss
-                    game["board_states"].append([row[:] for row in current_board])
-                    game["moves"].append((x, y, move["hit"]))
-                
-                self.games.append(game)
+        # Load all game logs
+        for filename in os.listdir(self.data_dir):
+            if filename.endswith(".json"):
+                with open(os.path.join(self.data_dir, filename), 'r') as f:
+                    try:
+                        game_data = json.load(f)
+                        if self._validate_game_data(game_data):
+                            self.games.append(game_data)
+                    except json.JSONDecodeError:
+                        print(f"Error reading log file: {filename}")
+                        continue
         
+        print(f"Loaded {len(self.games)} games from {self.data_dir}")
         return len(self.games) >= min_games
-
+    
+    def _validate_game_data(self, game_data: Dict) -> bool:
+        """Validate that game data has required fields"""
+        required_fields = ["timestamp", "moves"]
+        if not all(field in game_data for field in required_fields):
+            return False
+            
+        # Validate moves format
+        for move in game_data["moves"]:
+            if not all(field in move for field in ["x", "y", "hit"]):
+                return False
+                
+        return True
+    
     def add_move(self, board_state: List[List[int]], move: Tuple[int, int], hit: bool):
         """Add a move to the current game"""
         self.current_game["board_states"].append(board_state)
@@ -79,59 +74,91 @@ class TrainingData:
             "ship_positions": []
         }
     
-    def get_training_batch(self, batch_size: int) -> Dict:
-        """Get a batch of training data"""
-        if not self.games:
-            return None
-            
-        # Randomly select games for the batch
-        selected_games = np.random.choice(self.games, min(batch_size, len(self.games)), replace=False)
-        
-        # Prepare batch data
-        batch_states = []
-        batch_moves = []
-        batch_targets = []
-        
-        for game in selected_games:
-            for i in range(len(game["moves"]) - 1):  # -1 because we need next move as target
-                # Current state
-                state = torch.tensor(game["board_states"][i], dtype=torch.long)
-                batch_states.append(state)
-                
-                # Current move
-                move = game["moves"][i]
-                batch_moves.append(move)
-                
-                # Target (next move)
-                next_move = game["moves"][i + 1]
-                target = torch.zeros((self.board_size, self.board_size))
-                target[next_move[1], next_move[0]] = 1
-                batch_targets.append(target)
-        
-        return {
-            "states": torch.stack(batch_states),
-            "moves": torch.tensor(batch_moves),
-            "targets": torch.stack(batch_targets)
-        }
-    
-    def get_validation_data(self, validation_split: float = 0.2) -> Tuple[Dict, Dict]:
+    def get_validation_data(self, validation_split: float = 0.2) -> Tuple[Optional['TrainingData'], Optional['TrainingData']]:
         """Split data into training and validation sets"""
         if not self.games:
             return None, None
             
         # Shuffle games
-        np.random.shuffle(self.games)
+        random.shuffle(self.games)
         
-        # Split into train and validation
+        # Calculate split index
         split_idx = int(len(self.games) * (1 - validation_split))
-        train_games = self.games[:split_idx]
-        val_games = self.games[split_idx:]
         
-        # Create training data object for validation set
+        # Create new instances for training and validation
+        train_data = TrainingData(self.board_size)
         val_data = TrainingData(self.board_size)
-        val_data.games = val_games
         
-        return self, val_data
+        # Split the games
+        train_data.games = self.games[:split_idx]
+        val_data.games = self.games[split_idx:]
+        
+        return train_data, val_data
+    
+    def get_training_batch(self, batch_size: int) -> Optional[Dict[str, torch.Tensor]]:
+        """Get a batch of training data"""
+        if not self.games:
+            return None
+            
+        # Initialize batch tensors
+        states = []
+        targets = []
+        
+        # Collect batch_size samples
+        for _ in range(batch_size):
+            if self.current_batch_index >= len(self.games):
+                self.current_batch_index = 0
+                random.shuffle(self.games)
+                
+            game = self.games[self.current_batch_index]
+            self.current_batch_index += 1
+            
+            # Process each move in the game
+            for i in range(len(game["moves"]) - 1):
+                current_state = self._create_state_tensor(game["moves"][:i+1])
+                next_move = game["moves"][i+1]
+                target = self._create_target_tensor(next_move)
+                
+                states.append(current_state)
+                targets.append(target)
+                
+                if len(states) >= batch_size:
+                    break
+            
+            if len(states) >= batch_size:
+                break
+        
+        if not states:
+            return None
+            
+        # Convert to tensors
+        states_tensor = torch.stack(states)
+        targets_tensor = torch.stack(targets)
+        
+        return {
+            "states": states_tensor,
+            "targets": targets_tensor
+        }
+    
+    def _create_state_tensor(self, moves: List[Dict]) -> torch.Tensor:
+        """Create input tensor from game state"""
+        state = torch.zeros((self.board_size, self.board_size), dtype=torch.long)
+        
+        for move in moves:
+            x, y = move["x"], move["y"]
+            if move["hit"]:
+                state[y, x] = 1  # Hit
+            else:
+                state[y, x] = 2  # Miss
+                
+        return state
+    
+    def _create_target_tensor(self, move: Dict) -> torch.Tensor:
+        """Create target tensor for next move"""
+        target = torch.zeros((self.board_size, self.board_size), dtype=torch.float)
+        x, y = move["x"], move["y"]
+        target[y, x] = 1.0
+        return target
     
     def clear(self):
         """Clear all stored games"""
