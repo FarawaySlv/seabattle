@@ -20,6 +20,12 @@ wheels/
 .installed.cfg
 *.egg
 
+# Python bytecode
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Virtual Environment
 venv/
 env/
