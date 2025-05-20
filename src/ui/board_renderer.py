@@ -75,23 +75,42 @@ class BoardRenderer:
                                     )
                                     pygame.draw.rect(self.screen, GRAY, surround_rect)
 
-    def draw_coordinates(self, offset_x=GRID_OFFSET_X, offset_y=GRID_OFFSET_Y):
-        """Draw coordinate labels with improved spacing"""
-        font = pygame.font.Font(None, 28)
-        # Draw letters (A-J) above the grid, centered
+    def draw_coordinates(self, x, y):
+        """Draw coordinate labels (A-J, 0-9)"""
+        # Use system font instead of default font
+        try:
+            font = pygame.font.SysFont('arial', 28)
+        except:
+            # Fallback to any available system font
+            font = pygame.font.SysFont(None, 28)
+            
+        # Draw column labels (A-J)
         for i in range(10):
-            text = font.render(chr(65 + i), True, BLACK)
-            text_rect = text.get_rect(center=(offset_x + i * CELL_SIZE + CELL_SIZE // 2, offset_y - 24))
+            text = font.render(chr(65 + i), True, (0, 0, 0))
+            text_rect = text.get_rect(
+                centerx=x + i * CELL_SIZE + CELL_SIZE // 2,
+                top=y - 30
+            )
             self.screen.blit(text, text_rect)
-        # Draw numbers (1-10) to the left of the grid, centered
+        
+        # Draw row labels (0-9)
         for i in range(10):
-            text = font.render(str(i + 1), True, BLACK)
-            text_rect = text.get_rect(center=(offset_x - 24, offset_y + i * CELL_SIZE + CELL_SIZE // 2))
+            text = font.render(str(i), True, (0, 0, 0))
+            text_rect = text.get_rect(
+                right=x - 10,
+                centery=y + i * CELL_SIZE + CELL_SIZE // 2
+            )
             self.screen.blit(text, text_rect)
 
     def draw_board_labels(self, offset_x=GRID_OFFSET_X, offset_y=GRID_OFFSET_Y, second_grid_x=None):
         """Draw labels for both boards"""
-        font = pygame.font.Font(None, 36)
+        # Use system font instead of default font
+        try:
+            font = pygame.font.SysFont('arial', 36)
+        except:
+            # Fallback to any available system font
+            font = pygame.font.SysFont(None, 36)
+            
         # Player's board label
         text = font.render("Your Board", True, BLACK)
         text_rect = text.get_rect(center=(offset_x + 5 * CELL_SIZE, offset_y - 50))

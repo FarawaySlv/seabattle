@@ -40,6 +40,23 @@ class Game:
         self.speed_button_x = WINDOW_WIDTH - 50  # Position from right edge
         self.speed_button_y = 50  # Start position from top
         
+        # Random placement button (square, below speed buttons)
+        button_size = 60  # Square size
+        self.random_placement_button = pygame.Rect(
+            self.speed_button_x - button_size // 2,  # Center under speed buttons
+            self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 3 + 10,  # Below x3 button
+            button_size,
+            button_size
+        )
+
+        # AI vs AI button (square, bottom left corner)
+        self.ai_vs_ai_button = pygame.Rect(
+            20,  # 20 pixels from left edge
+            WINDOW_HEIGHT - button_size - 20,  # 20 pixels from bottom
+            button_size,
+            button_size
+        )
+
         # Initialize fonts
         self.font = pygame.font.Font(None, 32)
         self.small_font = pygame.font.Font(None, 20)
@@ -130,23 +147,6 @@ class Game:
             button_y,
             button_width,
             button_height
-        )
-
-        # Random placement button (square, below speed buttons)
-        button_size = 60  # Square size
-        self.random_placement_button = pygame.Rect(
-            self.speed_button_x - button_size // 2,  # Center under speed buttons
-            self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 3 + 10,  # Below x3 button
-            button_size,
-            button_size
-        )
-
-        # AI vs AI button (square, bottom right corner)
-        self.ai_vs_ai_button = pygame.Rect(
-            WINDOW_WIDTH - button_size - 20,  # 20 pixels from right edge
-            WINDOW_HEIGHT - button_size - 20,  # 20 pixels from bottom
-            button_size,
-            button_size
         )
 
         # Restart button
@@ -267,7 +267,7 @@ class Game:
                             self.speed_multiplier = i + 1
                             self.show_notification(f"Game speed set to {self.speed_multiplier}x")
                             break
-                    
+
                     if self.game_state.is_game_over() and self.restart_button.collidepoint(event.pos):
                         self.restart_game()
                     elif self.game_state.is_setup_phase() and self.random_placement_button.collidepoint(event.pos):

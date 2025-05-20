@@ -8,6 +8,7 @@ import numpy as np
 from models.board import Board
 from models.ship import Ship
 from utils.constants import SHIPS, GRID_SIZE
+from models.training_data import TrainingData
 
 class TransformerPlayer:
     def __init__(self, model_path: str = "models/battleship/checkpoints", config_path: str = "models/battleship/configs/model_config.json"):
@@ -18,7 +19,7 @@ class TransformerPlayer:
         self.model_path = model_path
         os.makedirs(model_path, exist_ok=True)
         
-        # Game state tracking (similar to AIPlayer)
+        # Game state tracking
         self.shot_history = set()  # Keep track of all shots
         self.hit_history = set()   # Keep track of hits
         self.last_hit = None       # Last successful hit
@@ -29,6 +30,9 @@ class TransformerPlayer:
         self.board_size = self.config["input_format"]["board_size"]
         self.move_history = []
         self.miss_history = []
+        
+        # Load the best model if available
+        self.load_model("best")
 
     def _load_config(self, config_path: str) -> Dict:
         """Load model configuration from JSON file"""
@@ -94,7 +98,7 @@ class TransformerPlayer:
         return BattleshipTransformer(self.config)
 
     def place_ships(self, board: Board):
-        """Place ships randomly on the board (same as AIPlayer for now)"""
+        """Place ships randomly on the board"""
         for size, count in SHIPS.items():
             for _ in range(count):
                 while True:
@@ -207,6 +211,21 @@ class TransformerPlayer:
             # Reset consecutive hits and ship direction on miss
             self.consecutive_hits = []
             self.ship_direction = None
+            self.miss_history.append((x, y))
+
+    def _get_current_board_state(self) -> List[List[int]]:
+        """Get current board state as a 2D list"""
+        board_state = [[0 for _ in range(self.board_size)] for _ in range(self.board_size)]
+        
+        # Mark hits
+        for x, y in self.hit_history:
+            board_state[y][x] = 1
+        
+        # Mark misses
+        for x, y in self.miss_history:
+            board_state[y][x] = 2
+        
+        return board_state
 
     def _create_input_tensor(self) -> torch.Tensor:
         """Create input tensor from current game state"""
@@ -232,15 +251,7 @@ class TransformerPlayer:
         
         return input_tensor
 
-    def save_model(self, name: str = "latest"):
-        """Save model state"""
-        path = os.path.join(self.model_path, f"{name}.pt")
-        torch.save({
-            'model_state_dict': self.model.state_dict(),
-            'config': self.config
-        }, path)
-    
-    def load_model(self, name: str = "latest"):
+    def load_model(self, name: str = "best"):
         """Load model state"""
         path = os.path.join(self.model_path, f"{name}.pt")
         if os.path.exists(path):
@@ -248,26 +259,6 @@ class TransformerPlayer:
             self.model.load_state_dict(checkpoint['model_state_dict'])
             return True
         return False
-    
-    def train_step(self, batch: Dict) -> float:
-        """Perform one training step"""
-        self.model.train()
-        
-        # Prepare input
-        input_tensor = self._create_input_tensor()
-        target = torch.tensor(batch['target'], device=self.device)
-        
-        # Forward pass
-        output = self.model(input_tensor)
-        
-        # Calculate loss
-        criterion = nn.CrossEntropyLoss()
-        loss = criterion(output.view(1, -1), target.view(-1))
-        
-        # Backward pass
-        loss.backward()
-        
-        return loss.item()
     
     def reset(self):
         """Reset game state tracking"""
