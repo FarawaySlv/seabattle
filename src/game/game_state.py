@@ -5,12 +5,12 @@ class GameState:
     PLAYING = "playing"
     GAME_OVER = "game_over"
 
-    def __init__(self):
+    def __init__(self, is_player_turn=True):
         self.current_state = self.SETUP
         self.ships_to_place = self._initialize_ships()
         self.current_ship_index = 0
         self.horizontal = True
-        self.is_player_turn = True  # True for player's turn, False for AI's turn
+        self.is_player_turn = is_player_turn  # True for player's turn, False for AI's turn
 
     def _initialize_ships(self):
         """Initialize the list of ships to be placed"""
@@ -32,7 +32,7 @@ class GameState:
         if self.current_ship_index >= len(self.ships_to_place):
             # All ships placed, start playing phase
             self.current_state = self.PLAYING
-            self.is_player_turn = True  # Player starts first
+            # Don't override is_player_turn here, keep the value set in constructor
 
     def toggle_ship_orientation(self):
         """Toggle between horizontal and vertical ship placement"""
@@ -65,7 +65,7 @@ class GameState:
     def start_playing_phase(self):
         """Start the playing phase"""
         self.current_state = self.PLAYING
-        self.is_player_turn = True  # Player starts first
+        # Don't override is_player_turn here, keep the value set in constructor
 
     def is_ai_turn(self):
         """Check if it's AI's turn"""

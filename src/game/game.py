@@ -1,4 +1,5 @@
 import pygame
+import random  # Add this import at the top
 from utils.constants import (
     WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE, WHITE,
     GRID_OFFSET_X, GRID_OFFSET_Y, CELL_SIZE, GRID_SPACING, RIGHT_MARGIN
@@ -37,6 +38,7 @@ class Game:
         # Auto-restart state for AI vs AI
         self.auto_restart = False
         self.algo_vs_trans_restart = False  # New state for Algo vs Trans
+        self.use_trained_transformer = True  # State for using trained transformer
         
         # Speed control
         self.speed_multiplier = 1  # Default speed
@@ -50,6 +52,14 @@ class Game:
         self.random_placement_button = pygame.Rect(
             self.speed_button_x - button_size // 2,  # Center under speed buttons
             self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 3 + 10,  # Below x3 button
+            button_size,
+            button_size
+        )
+
+        # Trained/Untrained button (square, below random placement button)
+        self.transformer_mode_button = pygame.Rect(
+            self.speed_button_x - button_size // 2,  # Center under random placement button
+            self.speed_button_y + (self.speed_button_radius * 2 + self.speed_button_spacing) * 4 + 20,  # Below random placement button
             button_size,
             button_size
         )
@@ -182,10 +192,14 @@ class Game:
         self.ai = self._create_ai(ai_type)
         self.player_ai = None  # Will be initialized if player type is AI
 
+        # Add random first turn selection
+        self.is_player_first = random.choice([True, False])
+        self.game_state = GameState(is_player_turn=self.is_player_first)
+
     def _create_ai(self, ai_type: str):
         """Create an AI player of the specified type"""
         if ai_type == "transformer":
-            return TransformerPlayer()
+            return TransformerPlayer(use_trained_model=self.use_trained_transformer)
         else:
             return AIPlayer()
 
@@ -198,21 +212,39 @@ class Game:
         pygame.display.flip()
 
     def restart_game(self):
-        """Restart the game"""
+        """Restart the game with the same settings"""
+        # Randomly determine who starts first
+        self.is_player_first = random.choice([True, False])
+        self.game_state = GameState(is_player_turn=self.is_player_first)
+        
+        # Reset boards
         self.player_board = Board()
         self.ai_board = Board()
-        self.game_state = GameState()
-        self.ai = self._create_ai(self.enemy_ai_type)
-        # Ensure player type is set in logger and player_ai is initialized
+        
+        # Reset AI players
         if self.player_type in ["transformer", "algorithmic"]:
-            self.game_logger.set_player_type(self.player_type)
-            self.player_ai = self._create_ai(self.player_type)  # Initialize player AI
-        else:
-            self.game_logger.set_player_type("human")
-            self.player_ai = None
+            self.player_ai = self._create_ai(self.player_ai_type)
+        if self.enemy_ai_type == "transformer":
+            self.ai = self._create_ai("transformer")
+        
+        # Place ships
+        self.place_ships_randomly()
+        
+        # Start playing phase
+        self.game_state.start_playing_phase()
+        
+        # Set player type in logger
+        self.game_logger.set_player_type(self.player_type, self.player_ai_type)
         self.game_logger.set_enemy_ai_type(self.enemy_ai_type)
-        self.notification = "Game restarted! Place your ships."
-        self.notification_timer = self.notification_duration
+        
+        # Show appropriate notification based on who starts
+        if self.player_type == "human":
+            if self.is_player_first:
+                self.show_notification("Game started! Your turn!")
+            else:
+                self.show_notification("Game started! AI's turn...")
+        else:
+            self.show_notification("Game started! AI's turn...")
 
     def place_ships_randomly(self):
         """Place player's ships randomly on the board"""
@@ -235,7 +267,10 @@ class Game:
         if self.player_type == "ai":
             self.player_ai = self._create_ai(self.player_ai_type)
         self.game_logger.set_enemy_ai_type(ai_type)
-        self.restart_game()
+        # Reset game state without placing ships
+        self.game_state = GameState(is_player_turn=self.is_player_first)
+        self.player_board = Board()
+        self.ai_board = Board()
         self.show_notification(f"AI type changed to {ai_type.capitalize()}!")
 
     def change_player_type(self, player_type: str):
@@ -299,9 +334,26 @@ class Game:
                     elif self.game_state.is_setup_phase() and self.game_state.is_ship_placement_complete() and self.start_button.collidepoint(event.pos):
                         self.game_state.start_playing_phase()
                         if self.player_type == "human":
-                            self.show_notification("Game started! Your turn!")
+                            if self.game_state.is_player_turn:
+                                self.show_notification("Game started! Your turn!")
+                            else:
+                                self.show_notification("Game started! AI's turn...")
+                                pygame.time.wait(1500 // self.speed_multiplier)  # Wait before AI's turn
+                                self.handle_ai_turn()
                         else:
                             self.show_notification("Game started! AI's turn...")
+                            if not self.game_state.is_player_turn:
+                                pygame.time.wait(1500 // self.speed_multiplier)  # Wait before AI's turn
+                                self.handle_ai_turn()
+                    elif self.transformer_mode_button.collidepoint(event.pos):
+                        # Toggle between trained and untrained transformer
+                        self.use_trained_transformer = not self.use_trained_transformer
+                        # Recreate AI instances with new setting
+                        if self.player_type == "transformer":
+                            self.player_ai = self._create_ai("transformer")
+                        if self.enemy_ai_type == "transformer":
+                            self.ai = self._create_ai("transformer")
+                        self.show_notification(f"Transformer mode: {'Trained' if self.use_trained_transformer else 'Untrained'}")
                     elif self.ai_vs_ai_button.collidepoint(event.pos):
                         # Toggle auto-restart state
                         self.auto_restart = not self.auto_restart
@@ -622,6 +674,26 @@ class Game:
                 )
                 self.screen.blit(text_surface, text_rect)
 
+        # Draw transformer mode button
+        button_color = (0, 200, 0) if self.use_trained_transformer else (200, 200, 200)
+        pygame.draw.rect(self.screen, button_color, self.transformer_mode_button)
+        pygame.draw.rect(self.screen, (150, 150, 150), self.transformer_mode_button, 2)
+        
+        # Draw wrapped text
+        text = "Trained\nTrans" if self.use_trained_transformer else "Untrained\nTrans"
+        lines = text.split('\n')
+        line_height = self.small_font.get_height()
+        total_height = line_height * len(lines)
+        start_y = self.transformer_mode_button.y + (self.transformer_mode_button.height - total_height) // 2
+        
+        for i, line in enumerate(lines):
+            text_surface = self.small_font.render(line, True, (0, 0, 0))
+            text_rect = text_surface.get_rect(
+                centerx=self.transformer_mode_button.centerx,
+                top=start_y + i * line_height
+            )
+            self.screen.blit(text_surface, text_rect)
+
         # Draw restart button if game is over
         if self.game_state.is_game_over():
             pygame.draw.rect(self.screen, (200, 200, 200), self.restart_button)
@@ -669,7 +741,10 @@ class Game:
                 else:
                     status_text += " - Vertical (Press R to rotate)"
         elif self.game_state.is_game_over():
-            status_text = "Game Over! You win!" if self.game_state.is_player_turn else "Game Over! AI wins!"
+            if self.game_state.is_player_turn:
+                status_text = "Game Over! You win!" if self.player_type == "human" else "Game Over! Player AI wins!"
+            else:
+                status_text = "Game Over! Enemy AI wins!"
         else:
             # Add remaining ships info
             board = self.player_board if self.game_state.is_player_turn else self.ai_board

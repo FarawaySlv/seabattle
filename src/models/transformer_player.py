@@ -18,7 +18,7 @@ from transformers import DistilBertModel, DistilBertConfig
 
 class TransformerPlayer:
     """A Battleship player that uses a trained transformer model to make decisions."""
-    def __init__(self, model_path: str = "models/battleship/checkpoints", config_path: str = "models/battleship/configs/model_config.json"):
+    def __init__(self, model_path: str = "models/battleship/checkpoints", config_path: str = "models/battleship/configs/model_config.json", use_trained_model: bool = True):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = self._load_config(config_path)
         self.model = self._create_model()
@@ -38,8 +38,12 @@ class TransformerPlayer:
         self.move_history = []
         self.miss_history = []
         
-        # Load the best model if available
-        self.load_model("best")
+        # Load the best model if available and use_trained_model is True
+        if use_trained_model:
+            self.load_model("best")
+        else:
+            # Initialize with random weights for untrained mode
+            self.model.apply(self._init_weights)
 
     def _load_config(self, config_path: str) -> Dict:
         """Load model configuration from JSON file"""
@@ -104,6 +108,16 @@ class TransformerPlayer:
                 return x
         
         return BattleshipDistilBERT(self.config)
+
+    def _init_weights(self, module):
+        """Initialize weights for untrained mode"""
+        if isinstance(module, (nn.Linear, nn.Embedding)):
+            module.weight.data.normal_(mean=0.0, std=0.02)
+            if isinstance(module, nn.Linear) and module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.LayerNorm):
+            module.bias.data.zero_()
+            module.weight.data.fill_(1.0)
 
     def place_ships(self, board: Board):
         """Place ships randomly on the board"""
