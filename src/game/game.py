@@ -213,8 +213,11 @@ class Game:
 
     def restart_game(self):
         """Restart the game with the same settings"""
+        print("DEBUG: restart_game - Starting game restart")
         # Randomly determine who starts first
         self.is_player_first = random.choice([True, False])
+        print(f"DEBUG: restart_game - Player starts first: {self.is_player_first}")
+        
         self.game_state = GameState(is_player_turn=self.is_player_first)
         
         # Reset boards
@@ -223,14 +226,18 @@ class Game:
         
         # Reset AI players
         if self.player_type in ["transformer", "algorithmic"]:
+            print(f"DEBUG: restart_game - Recreating player AI of type: {self.player_ai_type}")
             self.player_ai = self._create_ai(self.player_ai_type)
         if self.enemy_ai_type == "transformer":
+            print(f"DEBUG: restart_game - Recreating enemy AI of type: {self.enemy_ai_type}")
             self.ai = self._create_ai("transformer")
         
         # Place ships
+        print("DEBUG: restart_game - Placing ships")
         self.place_ships_randomly()
         
         # Start playing phase
+        print("DEBUG: restart_game - Starting playing phase")
         self.game_state.start_playing_phase()
         
         # Set player type in logger
@@ -245,6 +252,7 @@ class Game:
                 self.show_notification("Game started! AI's turn...")
         else:
             self.show_notification("Game started! AI's turn...")
+        print("DEBUG: restart_game - Game restart completed")
 
     def place_ships_randomly(self):
         """Place player's ships randomly on the board"""
@@ -358,19 +366,20 @@ class Game:
                         # Toggle auto-restart state
                         self.auto_restart = not self.auto_restart
                         if self.auto_restart:
-                            # Set both players to transformer AI
-                            self.player_type = "transformer"
-                            self.player_ai_type = "transformer"
-                            self.enemy_ai_type = "transformer"
-                            self.player_ai = self._create_ai("transformer")  # Initialize player AI
-                            self.game_logger.set_player_type("transformer")
-                            self.game_logger.set_enemy_ai_type("transformer")
+                            # Set both players to algorithmic AI
+                            self.player_type = "algorithmic"
+                            self.player_ai_type = "algorithmic"
+                            self.enemy_ai_type = "algorithmic"
+                            self.player_ai = self._create_ai("algorithmic")  # Initialize player AI
+                            self.ai = self._create_ai("algorithmic")  # Initialize enemy AI
+                            self.game_logger.set_player_type("algorithmic")
+                            self.game_logger.set_enemy_ai_type("algorithmic")
                             # Set speed to x3
                             self.speed_multiplier = 3
                             # Place ships randomly and start game
                             self.place_ships_randomly()
                             self.game_state.start_playing_phase()
-                            self.show_notification("Transformer vs Transformer battle started with auto-restart!")
+                            self.show_notification("Algorithmic vs Algorithmic battle started with auto-restart!")
                         else:
                             self.show_notification("Auto-restart disabled")
                     elif self.algo_vs_trans_button.collidepoint(event.pos):
@@ -501,11 +510,16 @@ class Game:
     def handle_ai_turn(self):
         """Handle AI's turn"""
         if not self.game_state.is_playing_phase():
+            print("DEBUG: handle_ai_turn - Not in playing phase")
             return
 
+        print("DEBUG: handle_ai_turn - Starting enemy AI turn")
         # Get AI's shot
         x, y = self.ai.get_next_shot(self.player_board)
+        print(f"DEBUG: handle_ai_turn - Enemy AI shot at ({x}, {y})")
+        
         hit, message = self.player_board.receive_shot(x, y)
+        print(f"DEBUG: handle_ai_turn - Shot result: {'Hit' if hit else 'Miss'}")
         
         # Record the result for AI's strategy
         self.ai.record_shot(x, y, hit)
@@ -517,22 +531,27 @@ class Game:
         if hit:
             self.show_notification(f"AI hits at {chr(65 + x)}{y + 1}! {message}")
             if self.player_board.is_all_ships_destroyed():
+                print("DEBUG: handle_ai_turn - Game over, enemy AI wins")
                 self.game_state.set_game_over()
                 self.show_notification("Game Over! AI wins!")
                 self.game_logger.log_game_end("enemy")
                 # Auto-restart if enabled
                 if self.auto_restart or self.algo_vs_trans_restart:
+                    print("DEBUG: handle_ai_turn - Auto-restarting game")
                     self.restart_game()
-                    self.place_ships_randomly()
-                    self.game_state.start_playing_phase()
+                    # Force a small delay to ensure the game state is updated
+                    pygame.time.wait(100)
+                    return
             else:
                 # AI gets another turn after a hit
-                pygame.time.wait(500 // self.speed_multiplier)  # Reduced base wait time and apply speed
+                print("DEBUG: handle_ai_turn - Enemy AI gets another turn")
+                pygame.time.wait(500 // self.speed_multiplier)
                 self.handle_ai_turn()
         else:
             self.show_notification(f"AI misses at {chr(65 + x)}{y + 1}")
-            pygame.time.wait(333 // self.speed_multiplier)  # Reduced base wait time and apply speed
+            pygame.time.wait(333 // self.speed_multiplier)
             self.game_state.switch_turn()
+            print("DEBUG: handle_ai_turn - Switching to player turn")
             self.show_notification("Your turn!")
 
     def draw(self):
@@ -764,15 +783,22 @@ class Game:
             self.screen.blit(status_surface, status_rect)
 
     def run(self):
+        print("DEBUG: Starting game loop")
         while self.running:
             self.handle_events()
             
             # Handle AI vs AI mode
             if self.player_type in ["transformer", "algorithmic"] and self.game_state.is_playing_phase() and not self.game_state.is_game_over():
+                print(f"DEBUG: AI vs AI mode - Player type: {self.player_type}, Turn: {'Player' if self.game_state.is_player_turn else 'Enemy'}")
                 if self.game_state.is_player_turn:
+                    print("DEBUG: AI vs AI mode - Starting player AI turn")
                     # Player AI's turn
                     x, y = self.player_ai.get_next_shot(self.ai_board)
+                    print(f"DEBUG: AI vs AI mode - Player AI shot at ({x}, {y})")
+                    
                     hit, message = self.ai_board.receive_shot(x, y)
+                    print(f"DEBUG: AI vs AI mode - Shot result: {'Hit' if hit else 'Miss'}")
+                    
                     self.player_ai.record_shot(x, y, hit)
                     
                     # Log the move
@@ -781,18 +807,26 @@ class Game:
                     if hit:
                         self.show_notification(f"Player AI hits at {chr(65 + x)}{y + 1}! {message}")
                         if self.ai_board.is_all_ships_destroyed():
+                            print("DEBUG: AI vs AI mode - Game over, player AI wins")
                             self.game_state.set_game_over()
                             self.show_notification("Game Over! Player AI wins!")
                             self.game_logger.log_game_end("player")
                             # Auto-restart if enabled
                             if self.auto_restart or self.algo_vs_trans_restart:
+                                print("DEBUG: AI vs AI mode - Auto-restarting game")
                                 self.restart_game()
-                                self.place_ships_randomly()
-                                self.game_state.start_playing_phase()
+                                # Force a small delay to ensure the game state is updated
+                                pygame.time.wait(100)
+                                continue
+                        else:
+                            print("DEBUG: AI vs AI mode - Player AI gets another turn")
+                            pygame.time.wait(500 // self.speed_multiplier)
+                            continue
                     else:
                         self.show_notification(f"Player AI misses at {chr(65 + x)}{y + 1}")
-                        pygame.time.wait(333 // self.speed_multiplier)  # Adjusted wait time
+                        pygame.time.wait(333 // self.speed_multiplier)
                         self.game_state.switch_turn()
+                        print("DEBUG: AI vs AI mode - Switching to enemy turn")
                 else:
                     # Enemy AI's turn
                     self.handle_ai_turn()
@@ -800,4 +834,5 @@ class Game:
             self.draw()
             self.clock.tick(60)
 
+        print("DEBUG: Game loop ended")
         pygame.quit() 
