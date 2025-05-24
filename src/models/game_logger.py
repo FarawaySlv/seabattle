@@ -17,7 +17,9 @@ class GameLogger:
             "total_moves": 0,
             "hits": 0,
             "misses": 0,
-            "player_type": "human"  # human or ai
+            "player_type": None,  # Will be set explicitly when game starts
+            "player_ai_type": None,  # Will be set for AI players
+            "enemy_ai_type": None  # Will be set for enemy AI
         }
     
     def log_initial_board(self, board: List[List[int]], is_player: bool = True):
@@ -46,12 +48,38 @@ class GameLogger:
         self.current_game["winner"] = winner
         self._save_game()
     
-    def set_player_type(self, player_type: str):
-        """Set the type of player (human or ai)."""
-        self.current_game["player_type"] = player_type
+    def set_player_type(self, player_type: str, ai_type: str = None):
+        """Set the type of player (human, transformer, or algorithmic) and AI type if applicable."""
+        if player_type not in ["human", "transformer", "algorithmic"]:
+            raise ValueError("Player type must be either 'human', 'transformer', or 'algorithmic'")
+        
+        # For human players, no AI type needed
+        if player_type == "human":
+            self.current_game["player_type"] = "human"
+            self.current_game["player_ai_type"] = None
+            return
+            
+        # For AI players, validate and set the AI type
+        if player_type in ["transformer", "algorithmic"]:
+            self.current_game["player_type"] = "ai"
+            self.current_game["player_ai_type"] = player_type
+        elif ai_type:
+            if ai_type not in ["transformer", "algorithmic"]:
+                raise ValueError("AI type must be either 'transformer' or 'algorithmic'")
+            self.current_game["player_type"] = "ai"
+            self.current_game["player_ai_type"] = ai_type
+    
+    def set_enemy_ai_type(self, ai_type: str):
+        """Set the type of enemy AI (only transformer or algorithmic allowed)."""
+        if ai_type not in ["transformer", "algorithmic"]:
+            raise ValueError("Enemy AI type must be either 'transformer' or 'algorithmic'")
+        self.current_game["enemy_ai_type"] = ai_type
     
     def _save_game(self):
         """Save the current game data to a JSON file."""
+        if self.current_game["player_type"] is None:
+            raise ValueError("Player type must be set before saving game")
+            
         filename = f"game_{self.current_game['timestamp']}.json"
         filepath = os.path.join(self.data_dir, filename)
         
@@ -68,7 +96,9 @@ class GameLogger:
             "total_moves": 0,
             "hits": 0,
             "misses": 0,
-            "player_type": "human"
+            "player_type": None,  # Will be set explicitly when game starts
+            "player_ai_type": None,  # Will be set for AI players
+            "enemy_ai_type": None  # Will be set for enemy AI
         }
     
     def get_game_stats(self) -> Dict:

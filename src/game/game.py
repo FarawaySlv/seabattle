@@ -30,6 +30,10 @@ class Game:
         self.player_ai_type = "algorithmic"  # Default to algorithmic AI
         self.enemy_ai_type = ai_type  # Type of AI opponent
         
+        # Set initial player type in logger
+        self.game_logger.set_player_type(self.player_type)
+        self.game_logger.set_enemy_ai_type(self.enemy_ai_type)
+        
         # Auto-restart state for AI vs AI
         self.auto_restart = False
         
@@ -190,6 +194,12 @@ class Game:
         self.ai_board = Board()
         self.game_state = GameState()
         self.ai = self._create_ai(self.enemy_ai_type)
+        # Ensure player type is set in logger
+        if self.player_type in ["transformer", "algorithmic"]:
+            self.game_logger.set_player_type(self.player_type)
+        else:
+            self.game_logger.set_player_type("human")
+        self.game_logger.set_enemy_ai_type(self.enemy_ai_type)
         self.notification = "Game restarted! Place your ships."
         self.notification_timer = self.notification_duration
 
@@ -213,21 +223,23 @@ class Game:
         self.ai = self._create_ai(ai_type)
         if self.player_type == "ai":
             self.player_ai = self._create_ai(self.player_ai_type)
+        self.game_logger.set_enemy_ai_type(ai_type)
         self.restart_game()
         self.show_notification(f"AI type changed to {ai_type.capitalize()}!")
 
     def change_player_type(self, player_type: str):
         """Change player type and restart the game"""
         self.player_type = player_type
-        if player_type == "ai":
-            self.player_ai = self._create_ai(self.player_ai_type)
+        if player_type in ["transformer", "algorithmic"]:
+            self.player_ai_type = player_type
+            self.player_ai = self._create_ai(player_type)
             # Place ships for both AIs
             self.player_ai.place_ships(self.player_board)
             self.ai.place_ships(self.ai_board)
             # Log initial board states
             self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
             self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
-            self.game_logger.set_player_type("ai")
+            self.game_logger.set_player_type(player_type)
         else:
             self.player_ai = None
             self.game_logger.set_player_type("human")
@@ -237,7 +249,7 @@ class Game:
     def change_player_ai_type(self, ai_type: str):
         """Change player AI type and restart the game"""
         self.player_ai_type = ai_type
-        if self.player_type == "ai":
+        if self.player_type in ["transformer", "algorithmic"]:
             self.player_ai = self._create_ai(ai_type)
             # Place ships for both AIs
             self.player_ai.place_ships(self.player_board)
@@ -245,6 +257,7 @@ class Game:
             # Log initial board states
             self.game_logger.log_initial_board(self.player_board.grid, is_player=True)
             self.game_logger.log_initial_board(self.ai_board.grid, is_player=False)
+            self.game_logger.set_player_type(ai_type)
         self.restart_game()
         self.show_notification(f"Player AI type changed to {ai_type.capitalize()}!")
 
@@ -274,32 +287,35 @@ class Game:
                         self.place_ships_randomly()
                     elif self.game_state.is_setup_phase() and self.game_state.is_ship_placement_complete() and self.start_button.collidepoint(event.pos):
                         self.game_state.start_playing_phase()
-                        self.show_notification("Game started! Your turn!")
+                        if self.player_type == "human":
+                            self.show_notification("Game started! Your turn!")
+                        else:
+                            self.show_notification("Game started! AI's turn...")
                     elif self.ai_vs_ai_button.collidepoint(event.pos):
                         # Toggle auto-restart state
                         self.auto_restart = not self.auto_restart
                         if self.auto_restart:
-                            # Set both players to algorithmic AI
-                            self.change_player_type("ai")
-                            self.change_player_ai_type("algorithmic")
-                            self.change_ai_type("algorithmic")
+                            # Set both players to transformer AI
+                            self.player_type = "transformer"
+                            self.player_ai_type = "transformer"
+                            self.enemy_ai_type = "transformer"
+                            self.game_logger.set_player_type("transformer")
+                            self.game_logger.set_enemy_ai_type("transformer")
                             # Set speed to x3
                             self.speed_multiplier = 3
                             # Place ships randomly and start game
                             self.place_ships_randomly()
                             self.game_state.start_playing_phase()
-                            self.show_notification("AI vs AI battle started with auto-restart!")
+                            self.show_notification("Transformer vs Transformer battle started with auto-restart!")
                         else:
                             self.show_notification("Auto-restart disabled")
                     # Check player side buttons
                     elif self.player_human_button.collidepoint(event.pos):
                         self.change_player_type("human")
                     elif self.player_algo_button.collidepoint(event.pos):
-                        self.change_player_type("ai")
-                        self.change_player_ai_type("algorithmic")
+                        self.change_player_type("algorithmic")
                     elif self.player_trans_button.collidepoint(event.pos):
-                        self.change_player_type("ai")
-                        self.change_player_ai_type("transformer")
+                        self.change_player_type("transformer")
                     # Check enemy side buttons
                     elif self.enemy_algo_button.collidepoint(event.pos):
                         self.change_ai_type("algorithmic")
@@ -368,7 +384,7 @@ class Game:
 
     def handle_playing_click(self, pos):
         """Handle clicks during the playing phase"""
-        if not self.game_state.is_player_turn or self.player_type == "ai":
+        if not self.game_state.is_player_turn or self.player_type in ["transformer", "algorithmic"]:
             return  # Ignore clicks during AI's turn or if player is AI
             
         # Check if click is on AI's board
@@ -388,7 +404,7 @@ class Game:
                     if self.ai_board.is_all_ships_destroyed():
                         self.game_state.set_game_over()
                         self.show_notification("Game Over! You win!")
-                        self.game_logger.log_game_end("player")
+                        self.game_logger.log_game_end("human")
                 else:
                     self.show_notification("Miss!")
                     pygame.time.wait(1000 // self.speed_multiplier)  # Adjusted wait time
@@ -420,7 +436,7 @@ class Game:
             if self.player_board.is_all_ships_destroyed():
                 self.game_state.set_game_over()
                 self.show_notification("Game Over! AI wins!")
-                self.game_logger.log_game_end("ai")
+                self.game_logger.log_game_end(self.enemy_ai_type)
                 # Auto-restart if enabled
                 if self.auto_restart:
                     self.restart_game()
@@ -518,7 +534,7 @@ class Game:
         self.screen.blit(human_text, human_rect)
 
         # Player Algo button
-        player_algo_color = (100, 100, 255) if self.player_type == "ai" and self.player_ai_type == "algorithmic" else (200, 200, 200)
+        player_algo_color = (100, 100, 255) if self.player_type == "algorithmic" else (200, 200, 200)
         pygame.draw.rect(self.screen, player_algo_color, self.player_algo_button)
         pygame.draw.rect(self.screen, (150, 150, 150), self.player_algo_button, 2)
         player_algo_text = self.small_font.render("Algo AI", True, (0, 0, 0))  # Using small font
@@ -526,7 +542,7 @@ class Game:
         self.screen.blit(player_algo_text, player_algo_rect)
 
         # Player Trans button
-        player_trans_color = (255, 100, 255) if self.player_type == "ai" and self.player_ai_type == "transformer" else (200, 200, 200)
+        player_trans_color = (255, 100, 255) if self.player_type == "transformer" else (200, 200, 200)
         pygame.draw.rect(self.screen, player_trans_color, self.player_trans_button)
         pygame.draw.rect(self.screen, (150, 150, 150), self.player_trans_button, 2)
         player_trans_text = self.small_font.render("Trans AI", True, (0, 0, 0))  # Using small font
@@ -638,7 +654,7 @@ class Game:
             self.handle_events()
             
             # Handle AI vs AI mode
-            if self.player_type == "ai" and self.game_state.is_playing_phase() and not self.game_state.is_game_over():
+            if self.player_type in ["transformer", "algorithmic"] and self.game_state.is_playing_phase() and not self.game_state.is_game_over():
                 if self.game_state.is_player_turn:
                     # Player AI's turn
                     x, y = self.player_ai.get_next_shot(self.ai_board)
@@ -653,7 +669,7 @@ class Game:
                         if self.ai_board.is_all_ships_destroyed():
                             self.game_state.set_game_over()
                             self.show_notification("Game Over! Player AI wins!")
-                            self.game_logger.log_game_end("player_ai")
+                            self.game_logger.log_game_end(self.player_type)
                             # Auto-restart if enabled
                             if self.auto_restart:
                                 self.restart_game()

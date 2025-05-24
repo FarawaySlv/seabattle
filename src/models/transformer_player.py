@@ -173,6 +173,8 @@ class TransformerPlayer:
             
             # 5. Find the best probability and similar moves
             flat_output = output.view(-1)
+            
+            # Get the best move
             best_value = torch.max(flat_output).item()
             
             # Print top 5 results
@@ -185,37 +187,12 @@ class TransformerPlayer:
                 state_str = "valid" if cell_state not in [2, 3, 4] else "invalid"
                 print(f"{i+1}. Position ({x}, {y}) - Probability: {value.item():.4f} - State: {state_str}")
             
-            # Find all moves with similar probability (within 5% of the best)
-            similar_moves = []
-            threshold = best_value * 0.95  # 5% threshold
+            # Take the absolute best move
+            best_move = torch.argmax(flat_output).item()
             
-            for i in range(len(flat_output)):
-                if flat_output[i].item() >= threshold:
-                    x = i % self.board_size
-                    y = i // self.board_size
-                    if board.get_cell_state(x, y) not in [2, 3, 4]:  # Only add if not already shot
-                        similar_moves.append((x, y))
-            
-            # If we have similar moves, choose randomly among them
-            if similar_moves:
-                x, y = random.choice(similar_moves)
-                print(f"Selected from {len(similar_moves)} similar moves: ({x}, {y})")
-            else:
-                # If no similar moves, find all valid moves
-                valid_moves = []
-                for i in range(self.board_size):
-                    for j in range(self.board_size):
-                        if board.get_cell_state(i, j) not in [2, 3, 4]:
-                            valid_moves.append((j, i))
-                
-                if valid_moves:
-                    x, y = random.choice(valid_moves)
-                    print(f"No similar moves found, selected from {len(valid_moves)} valid moves: ({x}, {y})")
-                else:
-                    # If no valid moves (shouldn't happen), pick any random position
-                    x = random.randint(0, self.board_size - 1)
-                    y = random.randint(0, self.board_size - 1)
-                    print(f"No valid moves found, selected random position: ({x}, {y})")
+            # Convert to grid coordinates
+            x = best_move % 10
+            y = best_move // 10
         
         return x, y
 
