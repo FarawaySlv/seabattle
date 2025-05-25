@@ -1,0 +1,1205 @@
+{
+  "timestamp": "20250524_224530",
+  "moves": [
+    {
+      "x": 7,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:30.798875"
+    },
+    {
+      "x": 8,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:30.926646"
+    },
+    {
+      "x": 9,
+      "y": 0,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:31.055944"
+    },
+    {
+      "x": 9,
+      "y": 1,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:31.234955"
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:31.408239"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:31.581771"
+    },
+    {
+      "x": 8,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:31.710459"
+    },
+    {
+      "x": 7,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:31.840321"
+    },
+    {
+      "x": 4,
+      "y": 3,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:31.971803"
+    },
+    {
+      "x": 4,
+      "y": 4,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:32.155160"
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:32.285055"
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:32.419721"
+    },
+    {
+      "x": 6,
+      "y": 4,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:32.555085"
+    },
+    {
+      "x": 6,
+      "y": 5,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:32.731912"
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:32.859740"
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:33.038209"
+    },
+    {
+      "x": 7,
+      "y": 3,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:33.215608"
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:33.393038"
+    },
+    {
+      "x": 7,
+      "y": 4,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:33.521761"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:33.656367"
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:33.791278"
+    },
+    {
+      "x": 7,
+      "y": 6,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:33.921612"
+    },
+    {
+      "x": 7,
+      "y": 5,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:34.104260"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:34.280263"
+    },
+    {
+      "x": 5,
+      "y": 4,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:34.410874"
+    },
+    {
+      "x": 5,
+      "y": 5,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:34.585071"
+    },
+    {
+      "x": 2,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:34.714144"
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:34.845543"
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:34.974688"
+    },
+    {
+      "x": 4,
+      "y": 4,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:35.108929"
+    },
+    {
+      "x": 9,
+      "y": 7,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:35.284366"
+    },
+    {
+      "x": 9,
+      "y": 8,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:35.457732"
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:35.585344"
+    },
+    {
+      "x": 9,
+      "y": 6,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:35.725644"
+    },
+    {
+      "x": 6,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:35.856503"
+    },
+    {
+      "x": 8,
+      "y": 7,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:35.984524"
+    },
+    {
+      "x": 6,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:36.162325"
+    },
+    {
+      "x": 1,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:36.290306"
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:36.423964"
+    },
+    {
+      "x": 7,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:36.556080"
+    },
+    {
+      "x": 5,
+      "y": 8,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:36.694528"
+    },
+    {
+      "x": 3,
+      "y": 6,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:36.823999"
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:36.954184"
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:37.088751"
+    },
+    {
+      "x": 2,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:37.222401"
+    },
+    {
+      "x": 0,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:37.357019"
+    },
+    {
+      "x": 3,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:37.490544"
+    },
+    {
+      "x": 9,
+      "y": 5,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:37.623776"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:37.756703"
+    },
+    {
+      "x": 0,
+      "y": 4,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:37.891939"
+    },
+    {
+      "x": 3,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:38.023555"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:38.157970"
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:38.289947"
+    },
+    {
+      "x": 3,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:38.425138"
+    },
+    {
+      "x": 0,
+      "y": 4,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:38.560537"
+    },
+    {
+      "x": 3,
+      "y": 5,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:38.689676"
+    },
+    {
+      "x": 1,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:38.823245"
+    },
+    {
+      "x": 2,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:38.957722"
+    },
+    {
+      "x": 5,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:39.089502"
+    },
+    {
+      "x": 2,
+      "y": 5,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:39.223199"
+    },
+    {
+      "x": 2,
+      "y": 6,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:39.408821"
+    },
+    {
+      "x": 0,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:39.538429"
+    },
+    {
+      "x": 2,
+      "y": 4,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:39.670892"
+    },
+    {
+      "x": 5,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:39.803889"
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:39.936886"
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:40.120801"
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:40.253435"
+    },
+    {
+      "x": 0,
+      "y": 5,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:40.387474"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:40.571589"
+    },
+    {
+      "x": 9,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:40.749075"
+    },
+    {
+      "x": 1,
+      "y": 6,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:40.883422"
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:41.060323"
+    },
+    {
+      "x": 1,
+      "y": 5,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:41.233733"
+    },
+    {
+      "x": 1,
+      "y": 3,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:41.406926"
+    },
+    {
+      "x": 0,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:41.535666"
+    },
+    {
+      "x": 2,
+      "y": 5,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:41.674234"
+    },
+    {
+      "x": 7,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:41.807996"
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:41.940248"
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:42.118134"
+    },
+    {
+      "x": 1,
+      "y": 7,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:42.248068"
+    },
+    {
+      "x": 6,
+      "y": 1,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:42.378396"
+    },
+    {
+      "x": 4,
+      "y": 6,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:42.507589"
+    },
+    {
+      "x": 9,
+      "y": 5,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:42.641073"
+    },
+    {
+      "x": 5,
+      "y": 5,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:42.775567"
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:42.908987"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:43.039267"
+    },
+    {
+      "x": 9,
+      "y": 9,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:43.175091"
+    },
+    {
+      "x": 8,
+      "y": 9,
+      "hit": true,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:43.352005"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:43.526281"
+    },
+    {
+      "x": 5,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:43.655146"
+    },
+    {
+      "x": 9,
+      "y": 4,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:43.791917"
+    },
+    {
+      "x": 6,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:43.922418"
+    },
+    {
+      "x": 0,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:44.059348"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:44.191851"
+    },
+    {
+      "x": 4,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:44.323736"
+    },
+    {
+      "x": 4,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:44.459460"
+    },
+    {
+      "x": 4,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:44.592150"
+    },
+    {
+      "x": 6,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:44.722622"
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:44.858895"
+    },
+    {
+      "x": 4,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:44.989146"
+    },
+    {
+      "x": 2,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:45.125459"
+    },
+    {
+      "x": 9,
+      "y": 4,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:45.255260"
+    },
+    {
+      "x": 9,
+      "y": 3,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:45.438476"
+    },
+    {
+      "x": 9,
+      "y": 2,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:45.616048"
+    },
+    {
+      "x": 6,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:45.794094"
+    },
+    {
+      "x": 7,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:45.922870"
+    },
+    {
+      "x": 1,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:46.054838"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:46.190246"
+    },
+    {
+      "x": 3,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:46.324174"
+    },
+    {
+      "x": 5,
+      "y": 0,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:46.457710"
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:46.589099"
+    },
+    {
+      "x": 2,
+      "y": 1,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:46.771853"
+    },
+    {
+      "x": 5,
+      "y": 9,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:46.949751"
+    },
+    {
+      "x": 4,
+      "y": 9,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:47.128134"
+    },
+    {
+      "x": 9,
+      "y": 7,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:47.305451"
+    },
+    {
+      "x": 6,
+      "y": 9,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:47.434317"
+    },
+    {
+      "x": 2,
+      "y": 7,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:47.568423"
+    },
+    {
+      "x": 4,
+      "y": 5,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:47.754058"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:47.883420"
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:48.016422"
+    },
+    {
+      "x": 6,
+      "y": 7,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:48.146640"
+    },
+    {
+      "x": 8,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:48.277221"
+    },
+    {
+      "x": 6,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:48.406528"
+    },
+    {
+      "x": 9,
+      "y": 6,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:48.540569"
+    },
+    {
+      "x": 2,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:48.677038"
+    },
+    {
+      "x": 9,
+      "y": 9,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:48.807490"
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:48.940370"
+    },
+    {
+      "x": 5,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:49.074563"
+    },
+    {
+      "x": 3,
+      "y": 8,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:49.205846"
+    },
+    {
+      "x": 9,
+      "y": 0,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:49.338891"
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:49.475302"
+    },
+    {
+      "x": 9,
+      "y": 8,
+      "hit": false,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:49.606941"
+    },
+    {
+      "x": 3,
+      "y": 1,
+      "hit": false,
+      "player_type": "player",
+      "timestamp": "2025-05-24T22:45:49.741982"
+    },
+    {
+      "x": 5,
+      "y": 6,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:49.876027"
+    },
+    {
+      "x": 8,
+      "y": 9,
+      "hit": true,
+      "player_type": "enemy",
+      "timestamp": "2025-05-24T22:45:50.057274"
+    }
+  ],
+  "initial_board_player": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0
+    ]
+  ],
+  "initial_board_ai": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1
+    ]
+  ],
+  "winner": "enemy",
+  "total_moves": 135,
+  "hits": 34,
+  "misses": 101,
+  "player_type": "ai",
+  "player_ai_type": "algorithmic",
+  "enemy_ai_type": "transformer",
+  "player_board": null,
+  "enemy_board": null,
+  "start_time": null,
+  "end_time": "2025-05-24T22:45:50.070361"
+}

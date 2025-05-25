@@ -12,7 +12,7 @@ A Python implementation of the classic Sea Battle (Battleship) game with an AI o
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/seabattle.git
+git clone git@github.com:FarawaySlv/seabattle.git
 cd seabattle
 ```
 
@@ -78,6 +78,7 @@ cd seabattle
 
 ```bash
 python src/models/train_transformer.py
+python src/models/train_tiny_bert.py
 ```
 
 Training parameters can be configured in the training script. The model checkpoints will be saved in `models/battleship/checkpoints/`.

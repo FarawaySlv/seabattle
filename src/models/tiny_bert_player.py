@@ -1,134 +1,310 @@
+import os
+import sys
+
+# Add the project root to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path.append(project_root)
+
 import torch
 import torch.nn as nn
-from transformers import AutoModel, AutoTokenizer
-import numpy as np
-from models.base_player import BasePlayer
-from utils.constants import BOARD_SIZE
-import os
 import json
-import time
+import random
+from typing import List, Tuple, Dict
+import numpy as np
+from models.board import Board
+from models.ship import Ship
+from utils.constants import SHIPS, GRID_SIZE
+from transformers import BertModel, BertConfig
 
-class TinyBertPlayer(BasePlayer):
-    def __init__(self, use_trained_model=True):
-        super().__init__()
-        self.model_name = "prajjwal1/bert-tiny"  # Using TinyBERT model
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModel.from_pretrained(self.model_name)
+class TinyBertPlayer:
+    """A Battleship player that uses a trained TinyBERT model to make decisions."""
+    def __init__(self, model_path: str = "models/battleship", config_path: str = "models/battleship/configs/model_config.json", use_trained_model: bool = True):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.config = self._load_config(config_path)
+        self.model = self._create_model()
+        self.model.to(self.device)
+        self.model_path = model_path
+        os.makedirs(model_path, exist_ok=True)
         
-        # Add classification head
-        self.classifier = nn.Linear(self.model.config.hidden_size, BOARD_SIZE * BOARD_SIZE)
+        # Game state tracking
+        self.shot_history = set()  # Keep track of all shots
+        self.hit_history = set()   # Keep track of hits
+        self.last_hit = None       # Last successful hit
+        self.consecutive_hits = []  # Track consecutive hits to determine ship direction
+        self.ship_direction = None  # Current ship direction (dx, dy)
         
-        # Load best model if available and requested
+        # Transformer-specific state
+        self.board_size = self.config["input_format"]["board_size"]
+        self.move_history = []
+        self.miss_history = []
+        
+        # Load the best model if available and use_trained_model is True
         if use_trained_model:
-            self._load_best_model()
+            self.load_model("best_tiny_bert_model")
         else:
-            self._init_weights()
-        
-        self.model.eval()  # Set to evaluation mode
-        
-    def _init_weights(self):
-        """Initialize weights for untrained model"""
-        nn.init.xavier_uniform_(self.classifier.weight)
-        nn.init.zeros_(self.classifier.bias)
-        
-    def _load_best_model(self):
-        """Load the best model weights"""
-        model_path = os.path.join("models", "battleship", "best_tiny_bert_model.pt")
-        if os.path.exists(model_path):
-            try:
-                self.model.load_state_dict(torch.load(model_path))
-                print("Loaded best TinyBERT model")
-            except Exception as e:
-                print(f"Error loading TinyBERT model: {e}")
-                self._init_weights()
-        else:
-            print("No saved TinyBERT model found, using untrained model")
-            self._init_weights()
-            
-    def _board_to_text(self, board):
-        """Convert board state to text representation"""
-        text = []
-        for y in range(BOARD_SIZE):
-            row = []
-            for x in range(BOARD_SIZE):
-                cell = board[y][x]
-                if cell == 0:  # Empty
-                    row.append(".")
-                elif cell == 1:  # Ship
-                    row.append("S")
-                elif cell == 2:  # Hit
-                    row.append("H")
-                elif cell == 3:  # Miss
-                    row.append("M")
-            text.append(" ".join(row))
-        return "\n".join(text)
-        
-    def get_next_shot(self, board):
-        """Get the next shot based on the current board state"""
-        start_time = time.time()
-        try:
-            # Convert board to text
-            board_text = self._board_to_text(board.grid)
-            
-            # Tokenize input
-            inputs = self.tokenizer(
-                board_text,
-                return_tensors="pt",
-                padding=True,
-                truncation=True,
-                max_length=512
-            )
-            
-            # Get model predictions with timeout
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-                logits = self.classifier(outputs.last_hidden_state[:, 0, :])
-                probabilities = torch.softmax(logits, dim=1)
+            # Initialize with random weights for untrained mode
+            self.model.apply(self._init_weights)
+
+    def _load_config(self, config_path: str) -> Dict:
+        """Load model configuration from JSON file"""
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    
+    def _create_model(self) -> nn.Module:
+        """Create TinyBERT-based model"""
+        class BattleshipTinyBERT(nn.Module):
+            def __init__(self, full_config):
+                super().__init__()
+                self.board_size = full_config["input_format"]["board_size"]
+                config = full_config["architecture"]
                 
-            # Convert probabilities to numpy array
-            probs = probabilities.numpy().flatten()
-            
-            # Get top 5 moves for analysis
-            top_5_indices = np.argsort(probs)[-5:][::-1]
-            print("\nTop 5 predicted moves:")
-            for idx in top_5_indices:
-                x, y = idx % BOARD_SIZE, idx // BOARD_SIZE
-                print(f"Position ({x}, {y}): {probs[idx]:.4f}")
+                # Initialize BERT with custom configuration matching the saved model
+                bert_config = BertConfig(
+                    vocab_size=30522,  # Match saved model's vocabulary size
+                    hidden_size=128,  # Match saved model's hidden size
+                    num_hidden_layers=2,  # Match saved model's number of layers
+                    num_attention_heads=2,  # Match saved model's number of heads
+                    intermediate_size=512,  # Match saved model's intermediate size
+                    hidden_dropout_prob=config["dropout"],
+                    attention_probs_dropout_prob=config["dropout"],
+                    max_position_embeddings=512,  # Match saved model's position embeddings
+                    type_vocab_size=2  # Match saved model's type vocabulary size
+                )
                 
-            # Find the best move (highest probability)
-            best_move_idx = np.argmax(probs)
-            x, y = best_move_idx % BOARD_SIZE, best_move_idx // BOARD_SIZE
+                self.bert = BertModel(bert_config)
+                
+                # Additional layers for board prediction
+                self.fc = nn.Sequential(
+                    nn.Linear(128, 128),  # Match hidden size
+                    nn.ReLU(),
+                    nn.Dropout(config["dropout"]),
+                    nn.Linear(128, self.board_size * self.board_size)
+                )
             
-            # Check if the move is valid (not already hit or missed)
-            if board.grid[y][x] in [2, 3]:  # If position is already hit or missed
-                # Find the next best move that's valid
-                for idx in top_5_indices:
-                    x, y = idx % BOARD_SIZE, idx // BOARD_SIZE
-                    if board.grid[y][x] not in [2, 3]:
+            def forward(self, x, attention_mask=None):
+                # x shape: (batch_size, board_size, board_size)
+                batch_size = x.shape[0]
+                
+                # Flatten the board and add [CLS] token
+                x = x.view(batch_size, -1)  # (batch_size, board_size * board_size)
+                cls_token = torch.zeros((batch_size, 1), dtype=torch.long, device=x.device)
+                x = torch.cat([cls_token, x], dim=1)  # Add [CLS] token
+                
+                # Create attention mask
+                if attention_mask is None:
+                    attention_mask = torch.ones_like(x)
+                
+                # Get BERT output
+                outputs = self.bert(
+                    input_ids=x,
+                    attention_mask=attention_mask
+                )
+                
+                # Use [CLS] token output for prediction
+                cls_output = outputs.last_hidden_state[:, 0]
+                
+                # Project to board size
+                x = self.fc(cls_output)
+                x = x.view(batch_size, self.board_size, self.board_size)
+                
+                return x
+        
+        return BattleshipTinyBERT(self.config)
+
+    def _init_weights(self, module):
+        """Initialize weights for untrained mode"""
+        if isinstance(module, (nn.Linear, nn.Embedding)):
+            module.weight.data.normal_(mean=0.0, std=0.02)
+            if isinstance(module, nn.Linear) and module.bias is not None:
+                module.bias.data.zero_()
+        elif isinstance(module, nn.LayerNorm):
+            module.bias.data.zero_()
+            module.weight.data.fill_(1.0)
+
+    def place_ships(self, board: Board):
+        """Place ships randomly on the board"""
+        for size, count in SHIPS.items():
+            for _ in range(count):
+                while True:
+                    # Try random position and orientation
+                    x = random.randint(0, GRID_SIZE - 1)
+                    y = random.randint(0, GRID_SIZE - 1)
+                    horizontal = random.choice([True, False])
+                    
+                    ship = Ship(size)
+                    if board.place_ship(ship, x, y, horizontal):
                         break
-            
-            # Timeout check
-            if time.time() - start_time > 1.0:  # 1 second timeout
-                print("TinyBERT prediction took too long, using random move")
-                # Use random move as fallback
-                valid_moves = [(x, y) for y in range(BOARD_SIZE) for x in range(BOARD_SIZE) 
-                             if board.grid[y][x] not in [2, 3]]
-                if valid_moves:
-                    x, y = valid_moves[np.random.randint(len(valid_moves))]
-            
-            return x, y
-            
-        except Exception as e:
-            print(f"Error in TinyBERT prediction: {e}")
-            # Fallback to random move
-            valid_moves = [(x, y) for y in range(BOARD_SIZE) for x in range(BOARD_SIZE) 
-                         if board.grid[y][x] not in [2, 3]]
-            if valid_moves:
-                x, y = valid_moves[np.random.randint(len(valid_moves))]
-                return x, y
-            return 0, 0  # Last resort fallback
+
+    def get_next_shot(self, board: Board) -> Tuple[int, int]:
+        """Get next shot coordinates based on current board state"""
+        # Create input tensor
+        input_tensor = self._create_input_tensor()
         
-    def record_shot(self, x, y, hit):
+        # Get model prediction
+        with torch.no_grad():
+            self.model.eval()
+            output = self.model(input_tensor)
+            
+            # Reshape output to board size
+            output = output.view(self.board_size, self.board_size)
+            
+            # Apply strategic modifications to the output probabilities
+            
+            # 1. Strongly penalize already shot positions
+            for y in range(self.board_size):
+                for x in range(self.board_size):
+                    if board.get_cell_state(x, y) in [2, 3, 4]:  # 2 for hit, 3 for miss, 4 for partially hit
+                        output[y, x] = float('-inf')
+            
+            # 2. Add bonus for positions adjacent to hits (if any)
+            for x, y in self.hit_history:
+                # First, try to find ship direction from consecutive hits
+                if len(self.consecutive_hits) >= 2:
+                    last_hit = self.consecutive_hits[-1]
+                    prev_hit = self.consecutive_hits[-2]
+                    dx = last_hit[0] - prev_hit[0]
+                    dy = last_hit[1] - prev_hit[1]
+                    
+                    # If we have a direction, prioritize continuing in that direction
+                    if dx != 0 or dy != 0:
+                        nx, ny = last_hit[0] + dx, last_hit[1] + dy
+                        if 0 <= nx < self.board_size and 0 <= ny < self.board_size:
+                            if board.get_cell_state(nx, ny) not in [2, 3, 4]:
+                                output[ny, nx] += 5.0  # Higher bonus for continuing in ship direction
+                
+                # Also check adjacent cells in all directions
+                for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.board_size and 0 <= ny < self.board_size:
+                        if board.get_cell_state(nx, ny) not in [2, 3, 4]:
+                            output[ny, nx] += 3.0  # Bonus for adjacent cells
+            
+            # 3. Add small random noise for exploration
+            noise = torch.randn_like(output) * 0.005
+            output = output + noise
+            
+            # 4. Apply temperature scaling to make probabilities more distinct
+            temperature = 0.2
+            output = output / temperature
+            
+            # 5. Find the best probability and similar moves
+            flat_output = output.view(-1)
+            
+            # Get the best move
+            best_value = torch.max(flat_output).item()
+            
+            # Print top 5 results
+            top_k_values, top_k_indices = torch.topk(flat_output, min(5, flat_output.numel()))
+            print("\nTop 5 predicted moves:")
+            for i, (value, idx) in enumerate(zip(top_k_values, top_k_indices)):
+                x = idx.item() % self.board_size
+                y = idx.item() // self.board_size
+                cell_state = board.get_cell_state(x, y)
+                state_str = "valid" if cell_state not in [2, 3, 4] else "invalid"
+                print(f"{i+1}. Position ({x}, {y}) - Probability: {value.item():.4f} - State: {state_str}")
+            
+            # Take the absolute best move
+            best_move = torch.argmax(flat_output).item()
+            
+            # Convert to grid coordinates
+            x = best_move % 10
+            y = best_move // 10
+        
+        return x, y
+
+    def record_shot(self, x: int, y: int, hit: bool):
         """Record the result of a shot"""
-        # TinyBERT doesn't need to record shots as it makes decisions based on the current board state
-        pass 
+        self.shot_history.add((x, y))
+        if hit:
+            self.hit_history.add((x, y))
+            self.last_hit = (x, y)
+            self.consecutive_hits.append((x, y))
+            # If we have two or more hits, update ship direction
+            if len(self.consecutive_hits) >= 2:
+                x1, y1 = self.consecutive_hits[-2]
+                x2, y2 = self.consecutive_hits[-1]
+                self.ship_direction = (x2 - x1, y2 - y1)
+        else:
+            # Reset consecutive hits and ship direction on miss
+            self.consecutive_hits = []
+            self.ship_direction = None
+            self.miss_history.append((x, y))
+
+    def _get_current_board_state(self) -> List[List[int]]:
+        """Get current board state as a 2D list"""
+        board_state = [[0 for _ in range(self.board_size)] for _ in range(self.board_size)]
+        
+        # Mark hits
+        for x, y in self.hit_history:
+            board_state[y][x] = 1
+        
+        # Mark misses
+        for x, y in self.miss_history:
+            board_state[y][x] = 2
+        
+        return board_state
+
+    def _create_input_tensor(self) -> torch.Tensor:
+        """Create input tensor from current game state"""
+        # Create 2D board tensor
+        input_tensor = torch.zeros((1, self.board_size, self.board_size), dtype=torch.long, device=self.device)
+        
+        # Add hit history (1)
+        for x, y in self.hit_history:
+            input_tensor[0, y, x] = 1
+        
+        # Add miss history (2)
+        for x, y in self.miss_history:
+            input_tensor[0, y, x] = 2
+            
+        # Add move history context (only if we have recent moves)
+        if len(self.move_history) > 0:
+            # Get the last 3 moves for context
+            recent_moves = self.move_history[-3:]
+            for x, y, hit in recent_moves:
+                # Only mark if not already marked as hit/miss
+                if input_tensor[0, y, x] == 0:
+                    input_tensor[0, y, x] = 3 if hit else 4
+        
+        return input_tensor
+
+    def load_model(self, name: str = "best_tiny_bert_model"):
+        """Load model state"""
+        path = os.path.join(self.model_path, f"{name}.pt")
+        if os.path.exists(path):
+            checkpoint = torch.load(path, map_location=self.device)
+            # Handle different checkpoint formats
+            if isinstance(checkpoint, dict):
+                if 'model_state_dict' in checkpoint:
+                    state_dict = checkpoint['model_state_dict']
+                elif 'state_dict' in checkpoint:
+                    state_dict = checkpoint['state_dict']
+                else:
+                    state_dict = checkpoint
+            else:
+                state_dict = checkpoint
+
+            # Create a new state dict with the correct key mapping
+            new_state_dict = {}
+            for k, v in state_dict.items():
+                if k.startswith('bert.'):
+                    new_state_dict[k] = v
+                else:
+                    # Add 'bert.' prefix to keys that don't have it
+                    new_key = f"bert.{k}"
+                    new_state_dict[new_key] = v
+
+            # Load the state dict with strict=False to handle missing keys
+            self.model.load_state_dict(new_state_dict, strict=False)
+            return True
+        return False
+    
+    def reset(self):
+        """Reset game state tracking"""
+        self.shot_history = set()
+        self.hit_history = set()
+        self.last_hit = None
+        self.consecutive_hits = []
+        self.ship_direction = None
+        self.move_history = []
+        self.miss_history = [] 

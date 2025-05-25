@@ -8,7 +8,7 @@ import os
 import json
 from tqdm import tqdm
 from models.tiny_bert_player import TinyBertPlayer
-from utils.constants import BOARD_SIZE
+from utils.constants import GRID_SIZE
 
 class BattleshipDataset(Dataset):
     def __init__(self, data_path):
@@ -18,38 +18,63 @@ class BattleshipDataset(Dataset):
         # Load and process game logs
         for filename in os.listdir(data_path):
             if filename.endswith('.json'):
-                with open(os.path.join(data_path, filename), 'r') as f:
-                    game_data = json.load(f)
-                    self._process_game(game_data)
+                try:
+                    with open(os.path.join(data_path, filename), 'r') as f:
+                        try:
+                            game_data = json.load(f)
+                            self._process_game(game_data)
+                        except json.JSONDecodeError as e:
+                            print(f"Warning: Corrupted JSON file {filename}, skipping")
+                            continue
+                except Exception as e:
+                    print(f"Error reading file {filename}: {e}")
+                    continue
     
     def _process_game(self, game_data):
-        # Process each move in the game
-        board_state = [[0] * BOARD_SIZE for _ in range(BOARD_SIZE)]
-        for move in game_data['moves']:
-            x, y = move['x'], move['y']
-            hit = move['hit']
+        try:
+            # Validate game data
+            if not game_data.get('moves'):
+                print(f"Warning: Game has no moves, skipping")
+                return
+                
+            if not game_data.get('initial_board_player') or not game_data.get('initial_board_ai'):
+                print(f"Warning: Game missing initial board states, skipping")
+                return
             
-            # Create target (one-hot encoding of the move)
-            target = np.zeros(BOARD_SIZE * BOARD_SIZE)
-            target[y * BOARD_SIZE + x] = 1
-            
-            # Convert board to text
-            board_text = self._board_to_text(board_state)
-            
-            # Update board state
-            board_state[y][x] = 2 if hit else 3
-            
-            # Add to dataset
-            self.data.append({
-                'text': board_text,
-                'target': target
-            })
+            # Process each move in the game
+            board_state = [[0] * GRID_SIZE for _ in range(GRID_SIZE)]
+            for move in game_data['moves']:
+                if not all(k in move for k in ['x', 'y', 'hit']):
+                    print(f"Warning: Invalid move data, skipping move")
+                    continue
+                    
+                x, y = move['x'], move['y']
+                hit = move['hit']
+                
+                # Create target (one-hot encoding of the move)
+                target = np.zeros(GRID_SIZE * GRID_SIZE)
+                target[y * GRID_SIZE + x] = 1
+                
+                # Convert board to text
+                board_text = self._board_to_text(board_state)
+                
+                # Update board state
+                board_state[y][x] = 2 if hit else 3
+                
+                # Add to dataset
+                self.data.append({
+                    'text': board_text,
+                    'target': target
+                })
+        except Exception as e:
+            print(f"Error processing game: {e}")
+            return
     
     def _board_to_text(self, board):
         text = []
-        for y in range(BOARD_SIZE):
+        for y in range(GRID_SIZE):
             row = []
-            for x in range(BOARD_SIZE):
+            for x in range(GRID_SIZE):
                 cell = board[y][x]
                 if cell == 0:  # Empty
                     row.append(".")
